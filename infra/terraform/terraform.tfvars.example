@@ -1,0 +1,4 @@
+# Copie para terraform.tfvars (que está no .gitignore) e preencha.
+subscription_id   = "00000000-0000-0000-0000-000000000000"
+admin_cidr        = "200.100.50.25/32"
+ssh_chave_publica = "ssh-ed25519 AAAA... seu-email"

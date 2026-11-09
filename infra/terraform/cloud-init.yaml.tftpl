@@ -1,0 +1,48 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+packages:
+  - docker.io
+  - docker-compose-v2
+  - git
+  - unattended-upgrades
+
+write_files:
+  - path: /etc/calcada-livre/.env
+    owner: root:root
+    permissions: "0600"
+    content: |
+      POSTGRES_PASSWORD=${postgres_password}
+      ROBO_API_KEY=${robo_api_key}
+      GRAFANA_ADMIN_PASSWORD=${grafana_password}
+      SITE_ADDRESS=${site_address}
+      GHCR_OWNER=${ghcr_owner}
+      COMPOSE_PROFILES=${perfis}
+
+  - path: /etc/systemd/system/calcada-deploy.service
+    content: |
+      [Unit]
+      Description=Calçada Livre: atualiza para a última versão publicada pelo pipeline
+      After=docker.service network-online.target
+      Requires=docker.service
+      [Service]
+      Type=oneshot
+      ExecStart=/opt/calcada-livre/infra/deploy/atualizar.sh
+
+  - path: /etc/systemd/system/calcada-deploy.timer
+    content: |
+      [Unit]
+      Description=Verifica nova versão a cada minuto
+      [Timer]
+      OnBootSec=30s
+      OnUnitActiveSec=60s
+      [Install]
+      WantedBy=timers.target
+
+runcmd:
+  - systemctl enable --now docker
+  - usermod -aG docker equipe
+  - git clone https://github.com/${repositorio}.git /opt/calcada-livre
+  - chmod +x /opt/calcada-livre/infra/deploy/atualizar.sh
+  - systemctl daemon-reload
+  - systemctl enable --now calcada-deploy.timer

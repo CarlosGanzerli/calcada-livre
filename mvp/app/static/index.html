@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calçada Livre</title>
+  <meta name="description" content="Mapa colaborativo de barreiras de acessibilidade em calçadas.">
+  <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="/static/estilo.css">
+</head>
+<body>
+  <a class="pular" href="#conteudo">Pular para o conteúdo</a>
+  <header>
+    <h1>Calçada Livre</h1>
+    <p>Barreiras em calçadas de São Paulo, relatadas por cidadãos, pelo robô inspetor e pela câmera.</p>
+  </header>
+
+  <main id="conteudo">
+    <section aria-labelledby="t-resumo">
+      <h2 id="t-resumo">Resumo</h2>
+      <p id="resumo" aria-live="polite">Carregando…</p>
+    </section>
+
+    <section aria-labelledby="t-mapa">
+      <h2 id="t-mapa">Mapa</h2>
+      <p class="dica">O mapa é visual. A mesma informação está na tabela abaixo, que funciona com leitor de tela e teclado.</p>
+      <div id="mapa" role="img" aria-label="Mapa das ocorrências. Os dados estão também na tabela de ocorrências."></div>
+    </section>
+
+    <section aria-labelledby="t-relatar">
+      <h2 id="t-relatar">Relatar uma barreira</h2>
+      <form id="form">
+        <label for="tipo">Tipo de barreira</label>
+        <select id="tipo" name="tipo" required>
+          <option value="buraco">Buraco</option>
+          <option value="obstaculo">Obstáculo (poste, entulho, carro)</option>
+          <option value="degrau">Degrau</option>
+          <option value="sem_rampa">Falta de rampa</option>
+          <option value="calcada_estreita">Calçada estreita</option>
+          <option value="trecho_escuro">Trecho escuro</option>
+          <option value="outro">Outro</option>
+        </select>
+
+        <fieldset>
+          <legend>Local</legend>
+          <p class="dica">Clique no mapa ou use o botão para pegar sua localização.</p>
+          <label for="lat">Latitude</label>
+          <input id="lat" name="latitude" inputmode="decimal" required>
+          <label for="lon">Longitude</label>
+          <input id="lon" name="longitude" inputmode="decimal" required>
+          <button type="button" id="gps">Usar minha localização</button>
+        </fieldset>
+
+        <label for="descricao">Descrição (não escreva nome, telefone ou documento)</label>
+        <textarea id="descricao" name="descricao" maxlength="1000" rows="3"></textarea>
+
+        <button type="submit">Enviar relato</button>
+        <p id="msg" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section aria-labelledby="t-lista">
+      <h2 id="t-lista">Ocorrências</h2>
+      <div class="tabela">
+        <table>
+          <caption>Últimas ocorrências, das mais recentes para as mais antigas</caption>
+          <thead>
+            <tr><th scope="col">Tipo</th><th scope="col">Origem</th><th scope="col">Status</th><th scope="col">Prioridade</th><th scope="col">Protocolo</th><th scope="col">Subprefeitura</th></tr>
+          </thead>
+          <tbody id="linhas"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Projeto acadêmico FIAP Global Solution 2026.2. O encaminhamento à prefeitura é simulado. Nenhum dado pessoal é armazenado.</p>
+  </footer>
+
+  <script src="/static/vendor/leaflet/leaflet.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

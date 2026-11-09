@@ -1,0 +1,7 @@
+apiVersion: 1
+providers:
+  - name: calcada-livre
+    folder: Calçada Livre
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards

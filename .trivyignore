@@ -1,0 +1,4 @@
+# AVD-AZU-0047: a regra "web-publico" libera 80/443 para a internet DE PROPÓSITO:
+# é o MVP público do cidadão. As portas de administração (22 e 3000) só aceitam o
+# IP da equipe, e o Terraform recusa admin_cidr = 0.0.0.0/0 (validação em variables.tf).
+AVD-AZU-0047
