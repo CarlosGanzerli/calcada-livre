@@ -85,13 +85,18 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/setup-buildx-action@v3
       - name: Build e push
-        run: |
-          docker build --build-arg GIT_SHA=${{ github.sha }} \
-            --label org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }} \
-            -t $IMAGEM:${{ github.sha }} -t $IMAGEM:latest mvp
-          docker push $IMAGEM:${{ github.sha }}
-          docker push $IMAGEM:latest
+        uses: docker/build-push-action@v6
+        with:
+          context: mvp
+          push: true
+          provenance: false   # um manifesto simples, sem índice de atestação (o GHCR recusou o índice)
+          build-args: GIT_SHA=${{ github.sha }}
+          tags: |
+            ${{ env.IMAGEM }}:${{ github.sha }}
+            ${{ env.IMAGEM }}:latest
+          labels: org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
 
   verificar-deploy:
     name: Conferir deploy em produção
