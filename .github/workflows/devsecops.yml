@@ -1,0 +1,130 @@
+name: devsecops
+
+# A cada push: build, testes e três barreiras de segurança.
+# Só se TODAS passarem a imagem é publicada; a VM busca a imagem nova em até
+# 1 minuto (infra/deploy/atualizar.sh) e o último job confere o deploy no ar.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  IMAGEM: ghcr.io/carlosganzerli/calcada-livre-api   # o GHCR exige letras minúsculas
+
+jobs:
+  testes:
+    name: Build e testes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -r mvp/requirements-dev.txt
+      - run: cd mvp && pytest -q
+
+  gitleaks:
+    name: Segredos (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Procurar segredos nos commits enviados
+        run: |
+          ANTES="${{ github.event.before }}"
+          if [ "${{ github.event_name }}" = "push" ] && [ -n "$ANTES" ] && [ "$ANTES" != "0000000000000000000000000000000000000000" ]; then
+            FAIXA="--log-opts=$ANTES..${{ github.sha }}"   # só o que chegou neste push
+          else
+            FAIXA=""                                        # primeiro push, PR ou manual: histórico inteiro
+          fi
+          docker run --rm -v "$PWD:/repo" -w /repo ghcr.io/gitleaks/gitleaks:v8.21.2 \
+            git --redact --verbose --exit-code 1 $FAIXA .
+
+  semgrep:
+    name: Código inseguro (Semgrep)
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep:1.95.0
+    steps:
+      - uses: actions/checkout@v4
+      - run: semgrep scan --config p/python --config p/dockerfile --config p/secrets --error --metrics=off
+
+  trivy:
+    name: Vulnerabilidades e configuração (Trivy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build da imagem para análise
+        run: docker build -t api:analise mvp
+      # Trivy roda pela imagem oficial com versão fixa (sem depender de uma action de terceiros)
+      - name: Vulnerabilidades da imagem (CRITICAL/HIGH com correção disponível)
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.57.1 \
+            image --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 --scanners vuln api:analise
+      - name: Configuração de Dockerfile, compose e Terraform
+        run: |
+          docker run --rm -v "$PWD:/src:ro" -w /src aquasec/trivy:0.57.1 \
+            config --severity CRITICAL,HIGH --exit-code 1 --ignorefile .trivyignore .
+
+  publicar:
+    name: Publicar imagem (GHCR)
+    needs: [testes, gitleaks, semgrep, trivy]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build e push
+        run: |
+          docker build --build-arg GIT_SHA=${{ github.sha }} \
+            --label org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }} \
+            -t $IMAGEM:${{ github.sha }} -t $IMAGEM:latest mvp
+          docker push $IMAGEM:${{ github.sha }}
+          docker push $IMAGEM:latest
+
+  verificar-deploy:
+    name: Conferir deploy em produção
+    needs: publicar
+    runs-on: ubuntu-latest
+    environment:
+      name: producao
+      url: ${{ vars.MVP_URL }}
+    steps:
+      - name: Esperar a VM rodar a versão nova (até 5 min)
+        env:
+          MVP_URL: ${{ vars.MVP_URL }}
+        run: |
+          if [ -z "$MVP_URL" ]; then echo "::warning::Variável MVP_URL ainda não configurada; pulando verificação."; exit 0; fi
+          for i in $(seq 1 30); do
+            versao=$(curl -fsS "$MVP_URL/health" | python3 -c "import json,sys; print(json.load(sys.stdin).get('versao',''))" || true)
+            echo "tentativa $i: produção em '$versao'"
+            [ "$versao" = "${{ github.sha }}" ] && echo "Deploy confirmado." && exit 0
+            sleep 10
+          done
+          echo "::error::A produção não chegou na versão ${{ github.sha }} em 5 minutos"; exit 1
+      - name: Teste de fumaça (rotas e autenticação)
+        env:
+          MVP_URL: ${{ vars.MVP_URL }}
+          ROBO_API_KEY: ${{ secrets.ROBO_API_KEY }}
+        run: |
+          [ -z "$MVP_URL" ] && exit 0
+          set -e
+          test "$(curl -s -o /dev/null -w '%{http_code}' $MVP_URL/)" = 200
+          test "$(curl -s -o /dev/null -w '%{http_code}' $MVP_URL/api/resumo)" = 200
+          test "$(curl -s -o /dev/null -w '%{http_code}' $MVP_URL/metrics)" = 404          # métricas não vazam
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X PATCH -H 'Content-Type: application/json' -d '{}' $MVP_URL/api/ocorrencias/teste)" = 401   # sem chave: barrado
+          if [ -n "$ROBO_API_KEY" ]; then   # com a chave do GitHub Secrets: autentica (404 = id inexistente, nada é alterado)
+            test "$(curl -s -o /dev/null -w '%{http_code}' -X PATCH -H 'Content-Type: application/json' -H "X-API-Key: $ROBO_API_KEY" -d '{}' $MVP_URL/api/ocorrencias/teste)" = 404
+          fi
+          echo "Fumaça OK"

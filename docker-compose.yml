@@ -1,0 +1,107 @@
+# Calçada Livre: stack completa.
+#   Local:     cp .env.example .env && docker compose up -d --build
+#   Produção:  a VM roda infra/deploy/atualizar.sh, que usa as imagens publicadas no GHCR.
+# Perfis opcionais (variável COMPOSE_PROFILES no .env): monitoramento, robo.
+
+x-seguro: &seguro
+  restart: unless-stopped
+  security_opt: ["no-new-privileges:true"]
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
+
+services:
+  db:
+    <<: *seguro
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: calcada
+      POSTGRES_USER: calcada
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+    volumes: [dados-postgres:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U calcada -d calcada"]
+      interval: 10s
+      retries: 5
+    # Sem "ports": o banco só é acessível pela rede interna do compose.
+
+  api:
+    <<: *seguro
+    image: ghcr.io/${GHCR_OWNER:-carlosganzerli}/calcada-livre-api:${API_TAG:-latest}
+    build: { context: ./mvp }
+    environment:
+      DATABASE_URL: postgresql+psycopg://calcada:${POSTGRES_PASSWORD}@db:5432/calcada
+      ROBO_API_KEY: ${ROBO_API_KEY:?defina ROBO_API_KEY no .env}
+    depends_on: { db: { condition: service_healthy } }
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    ports: ["127.0.0.1:8000:8000"]   # só para teste local; a internet entra pelo Caddy
+
+  caddy:
+    <<: *seguro
+    image: caddy:2-alpine
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-dados:/data
+    depends_on: [api]
+
+  robo:
+    <<: *seguro
+    profiles: [robo]
+    image: ghcr.io/${GHCR_OWNER:-carlosganzerli}/calcada-livre-rpa:latest
+    # Se a imagem ainda não estiver publicada, o compose constrói direto do repositório do robô
+    build: { context: "https://github.com/CarlosGanzerli/calcada-livre-rpa.git#main" }
+    environment:
+      API_URL: http://api:8000
+      ROBO_API_KEY: ${ROBO_API_KEY}
+      INTERVALO_MIN: ${INTERVALO_MIN:-15}
+      ALERTA_WEBHOOK_URL: ${ALERTA_WEBHOOK_URL:-}
+    volumes: [robo-saida:/app/saida, robo-logs:/app/logs]
+    depends_on: [api]
+
+  prometheus:
+    <<: *seguro
+    profiles: [monitoramento]
+    image: prom/prometheus:v2.55.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=15d
+    volumes:
+      - ./infra/monitoring/prometheus:/etc/prometheus:ro
+      - prometheus-dados:/prometheus
+    # Sem "ports": consultado pelo Grafana na rede interna.
+
+  node-exporter:
+    <<: *seguro
+    profiles: [monitoramento]
+    image: prom/node-exporter:v1.8.2
+    command: ["--path.rootfs=/host"]
+    pid: host
+    volumes: ["/:/host:ro"]
+
+  grafana:
+    <<: *seguro
+    profiles: [monitoramento]
+    image: grafana/grafana:11.3.0
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?defina GRAFANA_ADMIN_PASSWORD no .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    volumes:
+      - ./infra/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-dados:/var/lib/grafana
+    ports: ["3000:3000"]   # na nuvem, o firewall (NSG) só libera para o IP da equipe
+    depends_on: [prometheus]
+
+volumes:
+  dados-postgres:
+  caddy-dados:
+  robo-saida:
+  robo-logs:
+  prometheus-dados:
+  grafana-dados:

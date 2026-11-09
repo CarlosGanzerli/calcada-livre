@@ -1,0 +1,15 @@
+# Segredos e estado: nunca no repositório
+.env
+*.tfvars
+!*.tfvars.example
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl.bak
+crash.log
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+*.db

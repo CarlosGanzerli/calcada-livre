@@ -1,0 +1,36 @@
+groups:
+  - name: calcada-livre
+    rules:
+      - alert: ApiForaDoAr
+        expr: up{job="api"} == 0
+        for: 1m
+        labels: { severidade: critica }
+        annotations:
+          resumo: "A API do MVP não responde há mais de 1 minuto"
+          acao: "Ver 'docker compose ps' e os logs da api na VM"
+
+      - alert: TaxaDeErrosAlta
+        expr: |
+          sum(rate(http_requests_total{job="api", status="5xx"}[5m]))
+            / clamp_min(sum(rate(http_requests_total{job="api"}[5m])), 0.001) > 0.05
+        for: 2m
+        labels: { severidade: alta }
+        annotations:
+          resumo: "Mais de 5% das requisições estão falhando (HTTP 5xx)"
+
+      - alert: LatenciaAlta
+        expr: |
+          histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job="api"}[5m]))) > 1
+        for: 5m
+        labels: { severidade: media }
+        annotations:
+          resumo: "95% das requisições levam mais de 1 segundo"
+
+      - alert: VmSaturada
+        expr: |
+          (1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m]))) > 0.85
+            or (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) > 0.90
+        for: 5m
+        labels: { severidade: alta }
+        annotations:
+          resumo: "CPU acima de 85% ou memória acima de 90% na VM"

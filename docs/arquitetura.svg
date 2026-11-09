@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" width="1200" height="760" font-family="Inter, Segoe UI, Arial, sans-serif">
+<defs><marker id="seta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#333"/></marker></defs>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="20" y="38" font-size="22" font-weight="700" fill="#0b3d6e">Calçada Livre · arquitetura de produção</text>
+<rect x="20" y="60" width="250" height="660" rx="14" fill="#f4f8fc" stroke="#0b3d6e" stroke-width="2" />
+<text x="34" y="84" font-size="14" font-weight="700" fill="#0b3d6e">Desenvolvimento</text>
+<rect x="300" y="60" width="330" height="660" rx="14" fill="#f6f6f6" stroke="#333" stroke-width="2" />
+<text x="314" y="84" font-size="14" font-weight="700" fill="#333">GitHub</text>
+<rect x="660" y="60" width="520" height="660" rx="14" fill="#eef7f0" stroke="#1f6b35" stroke-width="2" />
+<text x="674" y="84" font-size="14" font-weight="700" fill="#1f6b35">Azure · Brazil South (Terraform)</text>
+<rect x="680" y="150" width="480" height="420" rx="14" fill="#ffffff" stroke="#1f6b35" stroke-width="2" stroke-dasharray="8 5"/>
+<text x="694" y="174" font-size="14" font-weight="700" fill="#1f6b35">VM Ubuntu 24.04 · B2s · docker compose</text>
+<rect x="45" y="110" width="200" height="70" rx="10" fill="#fff" stroke="#0b3d6e" stroke-width="2"/>
+<text x="145.0" y="137.0" text-anchor="middle" font-size="15" font-weight="700" fill="#1a1a1a">Equipe</text>
+<text x="145.0" y="157.0" text-anchor="middle" font-size="12.5" fill="#444">git push</text>
+<rect x="45" y="250" width="200" height="90" rx="10" fill="#fff" stroke="#0b3d6e" stroke-width="2"/>
+<text x="145.0" y="287.0" text-anchor="middle" font-size="15" font-weight="700" fill="#1a1a1a">terraform apply</text>
+<text x="145.0" y="307.0" text-anchor="middle" font-size="12.5" fill="#444">cria VM, rede, firewall</text>
+<text x="145.0" y="324.0" text-anchor="middle" font-size="12.5" fill="#444">e senhas aleatórias</text>
+<rect x="45" y="420" width="200" height="90" rx="10" fill="#fff" stroke="#0b3d6e" stroke-width="2"/>
+<text x="145.0" y="457.0" text-anchor="middle" font-size="15" font-weight="700" fill="#1a1a1a">Grafana</text>
+<text x="145.0" y="477.0" text-anchor="middle" font-size="12.5" fill="#444">só do IP da equipe</text>
+<text x="145.0" y="494.0" text-anchor="middle" font-size="12.5" fill="#444">(porta 3000)</text>
+<rect x="45" y="590" width="200" height="90" rx="10" fill="#fff" stroke="#0b3d6e" stroke-width="2"/>
+<text x="145.0" y="627.0" text-anchor="middle" font-size="15" font-weight="700" fill="#1a1a1a">Cidadão</text>
+<text x="145.0" y="647.0" text-anchor="middle" font-size="12.5" fill="#444">navegador / celular</text>
+<text x="145.0" y="664.0" text-anchor="middle" font-size="12.5" fill="#444">HTTPS 443</text>
+<rect x="325" y="100" width="280" height="60" rx="10" fill="#fff" stroke="#0b3d6e" stroke-width="2"/>
+<text x="465.0" y="135.0" text-anchor="middle" font-size="15" font-weight="700" fill="#1a1a1a">Repositório público</text>
+<rect x="325" y="190" width="280" height="200" rx="10" fill="#fff" stroke="#0b3d6e" stroke-width="2"/>
+<text x="465.0" y="282.0" text-anchor="middle" font-size="15" font-weight="700" fill="#1a1a1a">GitHub Actions</text>
+<text x="465.0" y="302.0" text-anchor="middle" font-size="12.5" fill="#444">1. build e testes</text>
+<text x="465.0" y="319.0" text-anchor="middle" font-size="12.5" fill="#444">2. Gitleaks (segredos)</text>
+<text x="465.0" y="336.0" text-anchor="middle" font-size="12.5" fill="#444">3. Semgrep (código)</text>
+<text x="465.0" y="353.0" text-anchor="middle" font-size="12.5" fill="#444">4. Trivy (imagem e IaC)</text>
+<text x="465.0" y="370.0" text-anchor="middle" font-size="12.5" fill="#444">5. publica imagem</text>
+<text x="465.0" y="387.0" text-anchor="middle" font-size="12.5" fill="#444">6. confere o deploy (chave)</text>
+<rect x="325" y="430" width="280" height="70" rx="10" fill="#fff" stroke="#0b3d6e" stroke-width="2"/>
+<text x="465.0" y="457.0" text-anchor="middle" font-size="15" font-weight="700" fill="#1a1a1a">GHCR</text>
+<text x="465.0" y="477.0" text-anchor="middle" font-size="12.5" fill="#444">imagens aprovadas</text>
+<rect x="325" y="530" width="280" height="70" rx="10" fill="#fff" stroke="#0b3d6e" stroke-width="2"/>
+<text x="465.0" y="557.0" text-anchor="middle" font-size="15" font-weight="700" fill="#1a1a1a">GitHub Secrets</text>
+<text x="465.0" y="577.0" text-anchor="middle" font-size="12.5" fill="#444">ROBO_API_KEY</text>
+<rect x="690" y="90" width="220" height="50" rx="10" fill="#fff" stroke="#0b3d6e" stroke-width="2"/>
+<text x="800.0" y="107.0" text-anchor="middle" font-size="13" font-weight="700" fill="#1a1a1a">NSG (firewall)</text>
+<text x="800.0" y="127.0" text-anchor="middle" font-size="12.5" fill="#444">80/443 internet · 22/3000 só equipe</text>
+<rect x="700" y="200" width="140" height="70" rx="10" fill="#fff" stroke="#0b3d6e" stroke-width="2"/>
+<text x="770.0" y="227.0" text-anchor="middle" font-size="14" font-weight="700" fill="#1a1a1a">Caddy</text>
+<text x="770.0" y="247.0" text-anchor="middle" font-size="12.5" fill="#444">HTTPS automático</text>
+<text x="770.0" y="264.0" text-anchor="middle" font-size="12.5" fill="#444">bloqueia /metrics</text>
+<rect x="870" y="200" width="130" height="70" rx="10" fill="#fff" stroke="#0b3d6e" stroke-width="2"/>
+<text x="935.0" y="227.0" text-anchor="middle" font-size="14" font-weight="700" fill="#1a1a1a">API FastAPI</text>
+<text x="935.0" y="247.0" text-anchor="middle" font-size="12.5" fill="#444">+ página Leaflet</text>
+<rect x="1020" y="200" width="125" height="70" rx="10" fill="#fff" stroke="#0b3d6e" stroke-width="2"/>
+<text x="1082.5" y="227.0" text-anchor="middle" font-size="14" font-weight="700" fill="#1a1a1a">PostgreSQL</text>
+<text x="1082.5" y="247.0" text-anchor="middle" font-size="12.5" fill="#444">ocorrências</text>
+<rect x="700" y="310" width="140" height="70" rx="10" fill="#fff" stroke="#0b3d6e" stroke-width="2"/>
+<text x="770.0" y="337.0" text-anchor="middle" font-size="14" font-weight="700" fill="#1a1a1a">atualizar.sh</text>
+<text x="770.0" y="357.0" text-anchor="middle" font-size="12.5" fill="#444">timer 1 min</text>
+<text x="770.0" y="374.0" text-anchor="middle" font-size="12.5" fill="#444">deploy por pull</text>
+<rect x="870" y="310" width="130" height="70" rx="10" fill="#fff" stroke="#0b3d6e" stroke-width="2"/>
+<text x="935.0" y="337.0" text-anchor="middle" font-size="14" font-weight="700" fill="#1a1a1a">Prometheus</text>
+<text x="935.0" y="357.0" text-anchor="middle" font-size="12.5" fill="#444">4 regras de alerta</text>
+<rect x="1020" y="310" width="125" height="70" rx="10" fill="#fff" stroke="#0b3d6e" stroke-width="2"/>
+<text x="1082.5" y="337.0" text-anchor="middle" font-size="14" font-weight="700" fill="#1a1a1a">Robô RPA</text>
+<text x="1082.5" y="357.0" text-anchor="middle" font-size="12.5" fill="#444">triagem 15 min</text>
+<rect x="700" y="430" width="140" height="70" rx="10" fill="#fff" stroke="#0b3d6e" stroke-width="2"/>
+<text x="770.0" y="457.0" text-anchor="middle" font-size="14" font-weight="700" fill="#1a1a1a">Grafana</text>
+<text x="770.0" y="477.0" text-anchor="middle" font-size="12.5" fill="#444">4 sinais de ouro</text>
+<rect x="1020" y="430" width="125" height="70" rx="10" fill="#fff" stroke="#0b3d6e" stroke-width="2"/>
+<text x="1082.5" y="457.0" text-anchor="middle" font-size="13" font-weight="700" fill="#1a1a1a">node-exporter</text>
+<text x="1082.5" y="477.0" text-anchor="middle" font-size="12.5" fill="#444">CPU, memória</text>
+<text x="1082.5" y="494.0" text-anchor="middle" font-size="12.5" fill="#444">disco</text>
+<rect x="690" y="600" width="470" height="100" rx="10" fill="#fffbea" stroke="#a8840b" stroke-width="2"/>
+<text x="925.0" y="642.0" text-anchor="middle" font-size="14" font-weight="700" fill="#1a1a1a">Dados pessoais (LGPD)</text>
+<text x="925.0" y="662.0" text-anchor="middle" font-size="12.5" fill="#444">Nenhum coletado. Ocorrência = tipo + coordenada + descrição sem PII.</text>
+<text x="925.0" y="679.0" text-anchor="middle" font-size="12.5" fill="#444">Banco e logs ficam no disco da VM, no Brasil. Segredos só em</text>
+<text x="925.0" y="696.0" text-anchor="middle" font-size="12.5" fill="#444">/etc/calcada-livre/.env (root, 600), no tfstate local e no GitHub Secrets.</text>
+<path d="M245,145 L325,130" fill="none" stroke="#333" stroke-width="2" marker-end="url(#seta)" />
+<text x="285.0" y="131.5" text-anchor="middle" font-size="12" fill="#333" paint-order="stroke" stroke="#fff" stroke-width="4">push</text>
+<path d="M465,160 L465,190" fill="none" stroke="#333" stroke-width="2" marker-end="url(#seta)" />
+<path d="M465,390 L465,430" fill="none" stroke="#333" stroke-width="2" marker-end="url(#seta)" />
+<text x="465" y="418" text-anchor="middle" font-size="12" fill="#333" paint-order="stroke" stroke="#fff" stroke-width="4">só se tudo passar</text>
+<path d="M245,295 L285,295 L285,50 L800,50 L800,90" fill="none" stroke="#333" stroke-width="2" marker-end="url(#seta)" />
+<text x="900" y="46" text-anchor="middle" font-size="12" fill="#333" paint-order="stroke" stroke="#fff" stroke-width="4">cria (Terraform)</text>
+<path d="M245,635 L650,635 L650,115 L690,115" fill="none" stroke="#333" stroke-width="2" marker-end="url(#seta)" />
+<text x="600" y="628" text-anchor="middle" font-size="12" fill="#333" paint-order="stroke" stroke="#fff" stroke-width="4">HTTPS</text>
+<path d="M770,140 L770,200" fill="none" stroke="#333" stroke-width="2" marker-end="url(#seta)" />
+<path d="M840,235 L870,235" fill="none" stroke="#333" stroke-width="2" marker-end="url(#seta)" />
+<path d="M1000,235 L1020,235" fill="none" stroke="#333" stroke-width="2" marker-end="url(#seta)" />
+<path d="M605,455 L665,455 L665,345 L700,345" fill="none" stroke="#333" stroke-width="2" marker-end="url(#seta)" />
+<text x="630" y="448" text-anchor="middle" font-size="12" fill="#333" paint-order="stroke" stroke="#fff" stroke-width="4">pull</text>
+<path d="M1082,310 L1082,290 L985,290 L985,270" fill="none" stroke="#333" stroke-width="2" marker-end="url(#seta)" />
+<text x="1040" y="286" text-anchor="middle" font-size="12" fill="#333" paint-order="stroke" stroke="#fff" stroke-width="4">API</text>
+<path d="M935,310 L935,270" fill="none" stroke="#333" stroke-width="2" marker-end="url(#seta)" stroke-dasharray="6 4"/>
+<text x="905" y="296" text-anchor="middle" font-size="12" fill="#333" paint-order="stroke" stroke="#fff" stroke-width="4">/metrics</text>
+<path d="M1020,465 L1008,465 L1008,355 L1000,355" fill="none" stroke="#333" stroke-width="2" marker-end="url(#seta)" stroke-dasharray="6 4"/>
+<path d="M840,465 L855,465 L855,345 L870,345" fill="none" stroke="#333" stroke-width="2" marker-end="url(#seta)" />
+<path d="M245,465 L285,465 L285,515 L770,515 L770,500" fill="none" stroke="#333" stroke-width="2" marker-end="url(#seta)" />
+<text x="520" y="510" text-anchor="middle" font-size="12" fill="#333" paint-order="stroke" stroke="#fff" stroke-width="4">porta 3000, só IP da equipe</text>
+</svg>

@@ -1,0 +1,18 @@
+{$SITE_ADDRESS} {
+	encode gzip
+
+	# Métricas internas nunca saem para a internet
+	@interno path /metrics /metrics/*
+	respond @interno 404
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Content-Security-Policy "default-src 'self'; img-src 'self' data: https://*.tile.openstreetmap.org; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'"
+		-Server
+	}
+
+	reverse_proxy api:8000
+}
