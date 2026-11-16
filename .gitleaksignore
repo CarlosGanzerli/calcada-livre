@@ -1,0 +1,5 @@
+# Chave FALSA usada na demonstração do pipeline barrado (docs/devsecops.md, seção 3).
+# Ela não dá acesso a nada. O commit seguinte tirou a chave do arquivo; ela continua no
+# histórico de propósito, como evidência, e por isso fica registrada aqui como achado conhecido.
+# Com um segredo de verdade, o primeiro passo seria revogar a chave, e não apenas apagá-la.
+8ad629cd45781744a90dd1d59607ed613989c917:infra/deploy/teste-fumaca.sh:generic-api-key:12
