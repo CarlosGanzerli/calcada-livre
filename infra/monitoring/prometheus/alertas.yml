@@ -20,7 +20,7 @@ groups:
 
       - alert: LatenciaAlta
         expr: |
-          histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job="api"}[5m]))) > 1
+          histogram_quantile(0.95, sum by (le) (rate(http_request_duration_highr_seconds_bucket{job="api"}[5m]))) > 1
         for: 5m
         labels: { severidade: media }
         annotations:

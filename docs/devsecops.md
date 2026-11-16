@@ -82,7 +82,7 @@ Prometheus coleta as métricas da API (`/metrics`, só na rede interna) e da VM 
 
 | Sinal de ouro | Métrica | Painel |
 |---|---|---|
-| Latência | `http_request_duration_seconds` (p50, p95, p99) | Latência |
+| Latência | `http_request_duration_highr_seconds` (p50, p95, p99) | Latência |
 | Tráfego | `rate(http_requests_total)` por rota | Tráfego por rota, Requisições por segundo |
 | Erros | proporção de respostas 5xx, e 4xx/5xx por código | Erros (5xx), Erros por código |
 | Saturação | CPU, memória e disco da VM; requisições em andamento | Saturação da VM, Requisições em andamento |
