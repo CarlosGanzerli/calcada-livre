@@ -38,9 +38,10 @@ async function carregar() {
     fetch("/api/resumo").then(r => r.json()),
   ]);
   const s = resumo.por_status || {};
+  const n = (q, um, varios) => `${q || 0} ${(q || 0) === 1 ? um : varios}`;
   document.getElementById("resumo").textContent =
-    `${resumo.total} ocorrências: ${s.encaminhada || 0} encaminhadas, ${s.nova || 0} aguardando triagem, ` +
-    `${s.quarentena || 0} em quarentena, ${s.duplicada || 0} duplicadas. ` +
+    `${n(resumo.total, "ocorrência", "ocorrências")}: ${n(s.encaminhada, "encaminhada", "encaminhadas")}, ` +
+    `${s.nova || 0} aguardando triagem, ${s.quarentena || 0} em quarentena, ${n(s.duplicada, "duplicada", "duplicadas")}. ` +
     `${(resumo.por_prioridade || {}).alta || 0} de prioridade alta.`;
 
   camada?.clearLayers();

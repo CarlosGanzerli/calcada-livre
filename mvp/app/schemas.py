@@ -13,7 +13,7 @@ class OcorrenciaCriar(BaseModel):
     # A validação aqui é propositalmente mínima: quem entra pelo app, pelo
     # carrinho ou pela visão grava como "nova", e a validação de negócio
     # (coordenada fora da cidade, tipo inconsistente, foto ausente) é feita
-    # pelo robô de triagem, que manda para quarentena com motivo registrado.
+    # pela automação de triagem (RPA), que manda para quarentena com motivo registrado.
     tipo: str = Field(max_length=32)
     latitude: float
     longitude: float

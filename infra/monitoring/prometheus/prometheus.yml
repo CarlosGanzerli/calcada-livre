@@ -13,5 +13,5 @@ scrape_configs:
   - job_name: node
     static_configs:
       - targets: ["node-exporter:9100"]
-  # Para rodar o Prometheus no seu computador apontando para o MVP publicado,
-  # veja infra/monitoring/README.md (o /metrics público é bloqueado de propósito).
+  # O Prometheus roda na própria VM, na rede interna do compose: o /metrics da API
+  # é bloqueado na internet de propósito (infra/caddy/Caddyfile).

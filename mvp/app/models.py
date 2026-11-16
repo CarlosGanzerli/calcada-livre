@@ -1,7 +1,7 @@
 """O contrato único do produto: a ocorrência.
 
 Todo componente da Calçada Livre lê ou grava este objeto pela API:
-app do cidadão, carrinho (Maker Lab), visão computacional, robô de
+app do cidadão, carrinho (Maker Lab), visão computacional, automação de
 triagem (RPA), Big Data e assistente (GenAI).
 
 Nenhum dado pessoal é armazenado: não há nome, CPF, telefone nem e-mail.
@@ -33,7 +33,7 @@ class Ocorrencia(Base):
     criada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_agora, index=True)
     atualizada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_agora, onupdate=_agora)
 
-    # Campos preenchidos pelo robô de triagem (RPA)
+    # Campos preenchidos pela automação de triagem (RPA)
     status: Mapped[str] = mapped_column(String(16), default="nova", index=True)
     prioridade: Mapped[str | None] = mapped_column(String(8), nullable=True)
     protocolo: Mapped[str | None] = mapped_column(String(32), nullable=True, unique=True)

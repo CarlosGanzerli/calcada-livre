@@ -43,7 +43,7 @@ Instrumentator(
 
 
 def exigir_chave_do_robo(x_api_key: str | None = Header(default=None)) -> None:
-    """Só o robô de triagem (e outros serviços internos) alteram ocorrências."""
+    """Só a automação de triagem (RPA) e outros serviços internos alteram ocorrências."""
     esperada = os.getenv("ROBO_API_KEY")
     if not esperada:
         raise HTTPException(503, "Alteração desabilitada: ROBO_API_KEY não configurada no servidor")

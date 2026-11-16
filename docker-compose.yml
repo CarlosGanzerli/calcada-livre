@@ -53,7 +53,7 @@ services:
     <<: *seguro
     profiles: [robo]
     image: ghcr.io/${GHCR_OWNER:-carlosganzerli}/calcada-livre-rpa:latest
-    # Se a imagem ainda não estiver publicada, o compose constrói direto do repositório do robô
+    # Se a imagem ainda não estiver publicada, o compose constrói direto do repositório da automação de triagem (RPA)
     build: { context: "https://github.com/CarlosGanzerli/calcada-livre-rpa.git#main" }
     environment:
       API_URL: http://api:8000

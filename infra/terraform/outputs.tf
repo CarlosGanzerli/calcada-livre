@@ -24,7 +24,7 @@ output "grafana_senha" {
 }
 
 output "robo_api_key" {
-  description = "Chave do robô. Cole no GitHub Secrets como ROBO_API_KEY: terraform output -raw robo_api_key"
+  description = "Chave de acesso da automação de triagem (RPA). Cole no GitHub Secrets como ROBO_API_KEY: terraform output -raw robo_api_key"
   value       = random_password.robo.result
   sensitive   = true
 }
