@@ -1,6 +1,6 @@
 name: devsecops
 
-# A cada push: build, testes e três barreiras de segurança.
+# A cada push: build, testes, três barreiras de segurança e a validação do Terraform.
 # Só se TODAS passarem a imagem é publicada; a VM busca a imagem nova em até
 # 1 minuto (infra/deploy/atualizar.sh) e o último job confere o deploy no ar.
 on:
@@ -70,9 +70,32 @@ jobs:
           docker run --rm -v "$PWD:/src:ro" -w /src aquasec/trivy:0.57.1 \
             config --severity CRITICAL,HIGH --exit-code 1 --ignorefile .trivyignore .
 
+  terraform:
+    name: Infraestrutura (Terraform)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/terraform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+          terraform_wrapper: false
+      - name: Formatação
+        run: terraform fmt -check -recursive -diff
+      - name: Validação da configuração
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate -no-color
+      # Azure simulada, sem credenciais: prova que o Terraform recusa a porta de
+      # administração aberta para 0.0.0.0/0 (infra/terraform/tests/).
+      - name: Testes da infraestrutura
+        run: terraform test -no-color
+
   publicar:
     name: Publicar imagem (GHCR)
-    needs: [testes, gitleaks, semgrep, trivy]
+    needs: [testes, gitleaks, semgrep, trivy, terraform]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
