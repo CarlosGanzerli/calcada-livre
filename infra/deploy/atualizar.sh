@@ -45,6 +45,17 @@ principal() {
 
   if [ "$antes" != "$depois" ]; then
     echo "deploy: ${antes:0:7} -> ${depois:0:7}"
+    # 5. Caddy, Prometheus e Grafana só leem a configuração ao iniciar: se ela mudou
+    #    entre os dois commits, os três são reiniciados (os que estiverem rodando).
+    if ! git diff --quiet "$antes" "$depois" -- infra/caddy infra/monitoring; then
+      local servico
+      for servico in caddy prometheus grafana; do
+        if [ -n "$(compose ps -q "$servico" 2>/dev/null || true)" ]; then
+          compose restart "$servico" >/dev/null 2>&1 || true
+        fi
+      done
+      echo "deploy: configuração do proxy e do monitoramento recarregada"
+    fi
     docker image prune -f >/dev/null
   fi
 }
