@@ -54,7 +54,7 @@ FIAP Global Solution 2026.2 · Engenharia de Software 4º ano · disciplina *Sec
 
 ![Pipeline DevSecOps](docs/pipeline.svg)
 
-A cada push rodam, em paralelo, build e testes, Gitleaks, Semgrep e Trivy. A imagem só é publicada no GHCR se as quatro barreiras passarem. A execução barrada e a corrigida estão descritas, com os links, em [docs/devsecops.md](docs/devsecops.md#3-pipeline-devsecops-40).
+A cada push rodam, em paralelo, build e testes, Gitleaks, Semgrep, Trivy e a validação do Terraform. A imagem só é publicada no GHCR se as cinco verificações passarem. A execução barrada e a corrigida estão descritas, com os links, em [docs/devsecops.md](docs/devsecops.md#execução-barrada-e-execução-corrigida).
 
 ## Rodar localmente
 

@@ -11,8 +11,10 @@ FROM python:3.13-slim
 ARG GIT_SHA=dev
 ENV PATH="/venv/bin:$PATH" PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 GIT_SHA=$GIT_SHA
 # Aplica as correções de segurança do sistema base (o Trivy barra CVE HIGH/CRITICAL com correção)
+# e remove o pip da imagem base: em produção nada é instalado dentro do container.
 RUN apt-get update && apt-get upgrade -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
+    && python -m pip uninstall -y pip \
     && useradd --create-home --uid 10001 app
 WORKDIR /app
 COPY --from=build /venv /venv

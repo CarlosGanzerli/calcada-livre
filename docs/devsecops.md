@@ -8,7 +8,7 @@ Como o MVP chega ao cidadão: empacotado em container, numa nuvem descrita por c
 
 | Requisito | Como foi atendido | Onde |
 |---|---|---|
-| Dockerfile enxuto | Multi-stage: o estágio `build` instala as dependências num venv; a imagem final copia só o venv e o código, sem pip, compiladores ou cache. Base `python:3.13-slim` com `apt-get upgrade` para receber as correções de segurança | `mvp/Dockerfile` |
+| Dockerfile enxuto | Multi-stage: o estágio `build` instala as dependências num venv; a imagem final copia só o venv e o código, sem compiladores nem cache, e o pip da imagem base é removido. Tamanho: 70 MB compactada. Base `python:3.13-slim` com `apt-get upgrade` para receber as correções de segurança | `mvp/Dockerfile` |
 | Usuário não root | `USER app` (uid 10001) | `mvp/Dockerfile` |
 | Sem segredo na imagem | Nenhum `ENV` com senha; tudo chega por variável de ambiente em tempo de execução. `.dockerignore` exclui `.env` e bancos locais. O Trivy também procura segredos | `mvp/.dockerignore` |
 | Stack com `docker compose` | `docker compose up -d` sobe banco, API, Caddy e, com perfis, a automação de triagem (serviço `robo`), Prometheus, Grafana e node-exporter | `docker-compose.yml` |
@@ -22,7 +22,7 @@ Terraform com o provedor `azurerm` cria grupo de recursos, rede virtual, sub-red
 |---|---|
 | State fora do repositório | Backend local; `*.tfstate` e `.terraform/` no `.gitignore` |
 | `.tfvars` fora do repositório | `*.tfvars` no `.gitignore`; só `terraform.tfvars.example` é versionado |
-| Porta de administração nunca aberta para 0.0.0.0/0 | SSH (22) e Grafana (3000) aceitam só `var.admin_cidr`. A variável tem **validação**: o `terraform apply` falha se alguém tentar `0.0.0.0/0` ou uma faixa maior que /24. Uma regra final nega todo o resto |
+| Porta de administração nunca aberta para 0.0.0.0/0 | SSH (22) e Grafana (3000) aceitam só `var.admin_cidr`. A variável tem **validação**: o `terraform apply` falha se alguém tentar `0.0.0.0/0` ou uma faixa maior que /24. Uma regra final nega todo o resto. Isso é **testado a cada push** (`infra/terraform/tests/firewall.tftest.hcl`, com a Azure simulada) |
 | Sem senha na VM | `disable_password_authentication = true`; acesso só por chave SSH |
 | Segredos | `random_password` gera as senhas do Postgres, do Grafana e a chave de acesso da automação de triagem (`ROBO_API_KEY`). Ninguém digita, ninguém vê no chat ou no código |
 
@@ -30,15 +30,49 @@ O Trivy aponta como CRITICAL a regra que libera 80/443 para a internet (AVD-AZU-
 
 ## 3. Pipeline DevSecOps (4,0)
 
-Arquivo: `.github/workflows/devsecops.yml`. Roda a cada push e pull request.
+Arquivo: `.github/workflows/devsecops.yml`. Roda a cada push e pull request. As cinco verificações rodam em paralelo, e a imagem só é publicada se todas passarem.
 
 ![Pipeline DevSecOps](pipeline.svg)
 
 - **Gitleaks** analisa os commits que chegaram no push (no primeiro push, o histórico inteiro). Qualquer segredo reprova.
 - **Semgrep** com as regras `p/python`, `p/dockerfile` e `p/secrets`; qualquer achado reprova (`--error`).
 - **Trivy** reprova CVE CRITICAL ou HIGH que já tenha correção, e configuração insegura em Dockerfile, compose e Terraform.
+- **Terraform** confere a formatação, valida a configuração (`terraform validate`) e roda os testes da infraestrutura (`terraform test`): `admin_cidr = 0.0.0.0/0` tem de ser recusado, e SSH e Grafana só podem aceitar o IP da equipe.
 - **Segredos no GitHub Secrets:** `ROBO_API_KEY` (usada no teste de fumaça para provar que a autenticação funciona em produção sem alterar dados). A publicação no GHCR usa o `GITHUB_TOKEN` temporário do próprio Actions. A URL fica em *Variables* (`MVP_URL`), porque não é segredo.
 - **Deploy automático:** a VM roda `infra/deploy/atualizar.sh` a cada minuto (timer do systemd). Ele baixa a imagem mais recente publicada, lê nela o commit que o pipeline aprovou (`GIT_SHA`) e deixa as configurações (compose, Caddyfile, Prometheus) nesse mesmo commit. Um commit barrado não chega à VM, nem como imagem nem como configuração. O job final só fica verde quando `GET /health` em produção responde com o commit que acabou de passar no pipeline.
+
+### Execução barrada e execução corrigida
+
+Em 16/11/2026 foi feito, de propósito, um commit com uma chave de acesso colada num script. A chave é falsa e não dá acesso a nada. O pipeline barrou; o commit seguinte corrigiu.
+
+| | Execução barrada | Execução corrigida |
+|---|---|---|
+| Commit | [`8ad629c`](https://github.com/CarlosGanzerli/calcada-livre/commit/8ad629cd45781744a90dd1d59607ed613989c917): chave colada em `infra/deploy/teste-fumaca.sh` | [`0b7eda4`](https://github.com/CarlosGanzerli/calcada-livre/commit/0b7eda4): a chave sai do arquivo e passa a vir do ambiente |
+| Execução | [nº 5](https://github.com/CarlosGanzerli/calcada-livre/actions/runs/43929781806) | [nº 6](https://github.com/CarlosGanzerli/calcada-livre/actions/runs/43930063131) |
+| Build e testes | passou | passou |
+| Gitleaks | **reprovou** | passou |
+| Semgrep | passou | passou |
+| Trivy | passou | passou |
+| Publicar imagem | **não executou** | publicou |
+| Conferir deploy | não executou | executou |
+
+Trecho do log do Gitleaks na execução barrada (o valor da chave é ocultado pelo próprio Gitleaks):
+
+```
+Finding:     ROBO_API_KEY="REDACTED"
+RuleID:      generic-api-key
+Entropy:     4.684184
+File:        infra/deploy/teste-fumaca.sh
+Line:        12
+Commit:      8ad629cd45781744a90dd1d59607ed613989c917
+WRN leaks found: 1
+##[error]Process completed with exit code 1.
+```
+
+- Como a publicação depende de todas as verificações, a imagem do commit barrado nunca existiu no GHCR, e a VM continuou no commit anterior.
+- O Semgrep não acusou essa chave (ela não tem um formato conhecido); o Gitleaks acusou pela entropia. Por isso as barreiras se somam.
+- A chave falsa continua no histórico do Git, como evidência, e está registrada no `.gitleaksignore`. Com um segredo de verdade, apagar o arquivo não basta: o primeiro passo é **revogar** a chave.
+- O job **Conferir deploy** só confere a produção depois que a variável `MVP_URL` é cadastrada (passo 6 do [guia de deploy](guia-deploy.md)); antes disso ele registra um aviso e não falha.
 
 **Por que deploy por pull e não por SSH?** Para fazer SSH a partir do GitHub Actions seria preciso liberar a porta 22 para os IPs dos runners, que mudam o tempo todo, na prática abrindo a porta de administração para a internet. Com o pull, nenhuma porta administrativa fica exposta e a VM só executa imagens que passaram por todas as barreiras.
 

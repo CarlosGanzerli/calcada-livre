@@ -36,10 +36,10 @@ jobs:
       - name: Procurar segredos nos commits enviados
         run: |
           ANTES="${{ github.event.before }}"
-          if [ "${{ github.event_name }}" = "push" ] && [ -n "$ANTES" ] && [ "$ANTES" != "0000000000000000000000000000000000000000" ]; then
+          if [ "${{ github.event_name }}" = "push" ] && [ -n "$ANTES" ] && git cat-file -e "$ANTES^{commit}" 2>/dev/null; then
             FAIXA="--log-opts=$ANTES..${{ github.sha }}"   # só o que chegou neste push
           else
-            FAIXA=""                                        # primeiro push, PR ou manual: histórico inteiro
+            FAIXA=""   # primeiro push, PR, execução manual ou histórico reescrito: histórico inteiro
           fi
           docker run --rm -v "$PWD:/repo" -w /repo ghcr.io/gitleaks/gitleaks:v8.21.2 \
             git --redact --verbose --exit-code 1 $FAIXA .
