@@ -6,8 +6,10 @@
 #   ROBO_API_KEY=$(terraform output -raw robo_api_key) \
 #   ../deploy/teste-fumaca.sh
 #
-# A chave de acesso NUNCA fica escrita neste arquivo: ela vem do ambiente.
 set -euo pipefail
+# DEMONSTRAÇÃO: chave de acesso colada no script "só para testar rápido".
+# É uma chave FALSA, criada só para mostrar o pipeline barrando um segredo.
+ROBO_API_KEY="3hKaHdtxSIj6SDjWpcyYWTaffqqg9e2rqLKIKcd7"
 : "${MVP_URL:?defina MVP_URL com a URL pública do MVP}"
 
 falhas=0
