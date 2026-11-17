@@ -21,6 +21,8 @@ Esse número é o endereço da sua internet. O SSH e o Grafana da VM vão abrir 
 2. Clique no ícone `>_` no topo da tela e escolha **Bash**.
 3. Na pergunta sobre armazenamento, escolha **Montar conta de armazenamento** (*Mount storage account*), selecione a assinatura *Azure for Students* e deixe a Azure criar a conta. Custa centavos e guarda os seus arquivos entre uma sessão e outra.
 
+Se a conta tiver mais de uma assinatura, escolha aqui a que tem crédito.
+
 Se a criação da conta de armazenamento falhar (acontece em contas de estudante), volte e escolha **Nenhuma conta de armazenamento necessária** (*No storage account required*). Funciona igual, com um cuidado: os arquivos somem quando a sessão fecha, então faça os passos 4 a 7 de uma vez, sem fechar a aba. A tabela do fim do guia explica como continuar se a sessão cair.
 
 ## 4. Preparar
@@ -38,9 +40,11 @@ Agora cole esta linha **trocando o número pelo seu IP do passo 2**:
 ./preparar.sh 200.100.50.25
 ```
 
-O [`preparar.sh`](../infra/terraform/preparar.sh) cria a chave SSH, descobre a sua assinatura e escolhe uma região e um tamanho de VM que a sua conta pode usar (contas de estudante só aceitam algumas regiões). No fim, ele grava o arquivo `terraform.tfvars`.
+O [`preparar.sh`](../infra/terraform/preparar.sh) cria a chave SSH, descobre a assinatura em uso, habilita nela os serviços de máquina virtual e de rede (uma assinatura nova vem sem eles; leva de 1 a 3 minutos, só na primeira vez) e escolhe uma região e um tamanho de VM que a conta pode usar (contas de estudante só aceitam algumas regiões). No fim, ele grava o arquivo `terraform.tfvars`.
 
-**O que você deve ver:** um resumo com a assinatura, o seu IP terminado em `/32`, a região e o tamanho da VM. Esse arquivo fica só no seu Cloud Shell: o `.gitignore` impede que ele vá para o GitHub.
+**O que você deve ver:** um resumo com o nome da assinatura, o seu IP terminado em `/32`, a região e o tamanho da VM. Esse arquivo fica só no seu Cloud Shell: o `.gitignore` impede que ele vá para o GitHub.
+
+Se a conta tiver mais de uma assinatura e o resumo mostrar a errada, rode `az account list -o table` para ver os nomes, troque com `az account set --subscription "NOME DA ASSINATURA"` e rode o `preparar.sh` de novo.
 
 Se a região escolhida não for `brazilsouth`, o script avisa. Tudo funciona do mesmo jeito, mas os dados deixam de ficar no Brasil: atualize a tabela da LGPD e a estimativa de custo em [devsecops.md](devsecops.md).
 

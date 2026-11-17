@@ -17,4 +17,8 @@ terraform {
 provider "azurerm" {
   features {}
   subscription_id = var.subscription_id
+  # Habilita na assinatura só os serviços básicos (máquina virtual, rede, armazenamento),
+  # e não as dezenas que o provider habilitaria por padrão: o projeto pede à assinatura
+  # apenas o que usa e o primeiro "terraform apply" numa assinatura nova fica mais rápido.
+  resource_provider_registrations = "core"
 }
