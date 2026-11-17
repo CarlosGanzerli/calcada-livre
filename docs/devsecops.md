@@ -48,7 +48,7 @@ Em 16/11/2026 foi feito, de propósito, um commit com uma chave de acesso colada
 | | Execução barrada | Execução corrigida |
 |---|---|---|
 | Commit | [`8ad629c`](https://github.com/CarlosGanzerli/calcada-livre/commit/8ad629cd45781744a90dd1d59607ed613989c917): chave colada em `infra/deploy/teste-fumaca.sh` | [`0b7eda4`](https://github.com/CarlosGanzerli/calcada-livre/commit/0b7eda4): a chave sai do arquivo e passa a vir do ambiente |
-| Execução | [nº 5](https://github.com/CarlosGanzerli/calcada-livre/actions/runs/43929781806) | [nº 6](https://github.com/CarlosGanzerli/calcada-livre/actions/runs/43930063131) |
+| Execução | [nº 2](https://github.com/CarlosGanzerli/calcada-livre/actions/runs/43983780826) | [nº 3](https://github.com/CarlosGanzerli/calcada-livre/actions/runs/43983901312) |
 | Build e testes | passou | passou |
 | Gitleaks | **reprovou** | passou |
 | Semgrep | passou | passou |
