@@ -489,7 +489,8 @@
               "Time": true,
               "__name__": true,
               "Value": true,
-              "job": true
+              "job": true,
+              "instance": true
             }
           }
         }

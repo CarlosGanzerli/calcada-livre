@@ -89,7 +89,15 @@ Prometheus coleta as métricas da API (`/metrics`, só na rede interna) e da VM 
 
 Regras de alerta (`infra/monitoring/prometheus/alertas.yml`): **ApiForaDoAr** (API sem responder por 1 min), **TaxaDeErrosAlta** (> 5% de 5xx por 2 min), **LatenciaAlta** (p95 > 1 s por 5 min) e **VmSaturada** (CPU > 85% ou memória > 90% por 5 min). O painel mostra os alertas disparados.
 
-**Como disparar o alerta:** o passo 9 do [guia de deploy](guia-deploy.md) para a API na VM (pausando a rotina de deploy, que a religaria em menos de 1 minuto). Em cerca de 1 minuto e meio o ApiForaDoAr passa a *firing* e o painel fica vermelho. No teste local, o alerta disparou 80 s depois de parar a API ([print](evidencias/grafana-alerta-teste-local.png)).
+**Como disparar o alerta:** o passo 9 do [guia de deploy](guia-deploy.md) para a API na VM (pausando a rotina de deploy, que a religaria em menos de 1 minuto). Em cerca de 1 minuto e meio o ApiForaDoAr passa a *firing* e o painel fica vermelho.
+
+**Teste local de 16/11/2026**, com a mesma stack deste repositório (`docker compose up`) e tráfego gerado por script:
+
+![Painel dos 4 sinais de ouro no teste local](evidencias/grafana-painel-teste-local.png)
+
+Com a API parada de propósito às 23:29:52, o alerta ApiForaDoAr passou a *firing* 67 segundos depois (a regra espera 1 minuto sem resposta):
+
+![Alerta ApiForaDoAr disparado no teste local](evidencias/grafana-alerta-teste-local.png)
 
 O enunciado também permite rodar Prometheus e Grafana no computador apontando para o MVP publicado; aqui eles rodam na própria VM porque o `/metrics` é bloqueado na internet de propósito.
 
