@@ -5,7 +5,7 @@ from datetime import datetime
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -31,7 +31,40 @@ app = FastAPI(
     title="Calçada Livre API",
     description="Contrato único da ocorrência de barreira em calçada. Sem dados pessoais.",
     version="1.0.0",
+    redoc_url=None,
 )
+# Cabeçalhos de segurança em toda resposta, também quando não há proxy na frente.
+CABECALHOS_DE_SEGURANCA = {
+    "Strict-Transport-Security": "max-age=31536000",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Content-Security-Policy": (
+        "default-src 'self'; img-src 'self' data: https://*.tile.openstreetmap.org; "
+        "style-src 'self' 'unsafe-inline'; frame-ancestors 'none'"
+    ),
+}
+
+
+# A página /docs (contrato da API) carrega o Swagger UI de um CDN e usa um script
+# na própria página. A exceção vale só para ela; o resto do site fica no 'self'.
+CSP_DA_DOCUMENTACAO = (
+    "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+    "img-src 'self' data: https://fastapi.tiangolo.com; frame-ancestors 'none'"
+)
+
+
+@app.middleware("http")
+async def cabecalhos_de_seguranca(request: Request, call_next):
+    resposta = await call_next(request)
+    for nome, valor in CABECALHOS_DE_SEGURANCA.items():
+        resposta.headers.setdefault(nome, valor)
+    if request.url.path == "/docs":
+        resposta.headers["Content-Security-Policy"] = CSP_DA_DOCUMENTACAO
+    return resposta
+
+
 # Métricas de ouro para o Prometheus: tráfego, erros e latência por rota, e
 # requisições em andamento (saturação). O /metrics não é exposto na internet:
 # o proxy (Caddy) bloqueia, e só o Prometheus da rede interna lê.
@@ -47,7 +80,7 @@ def exigir_chave_do_robo(x_api_key: str | None = Header(default=None)) -> None:
     esperada = os.getenv("ROBO_API_KEY")
     if not esperada:
         raise HTTPException(503, "Alteração desabilitada: ROBO_API_KEY não configurada no servidor")
-    if not x_api_key or not hmac.compare_digest(x_api_key, esperada):
+    if not x_api_key or not hmac.compare_digest(x_api_key.encode(), esperada.encode()):
         raise HTTPException(401, "Chave inválida")
 
 

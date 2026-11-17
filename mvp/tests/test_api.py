@@ -53,3 +53,22 @@ def test_resumo_e_metricas(cliente):
 
 def test_pagina(cliente):
     assert "Calçada Livre" in cliente.get("/").text
+
+
+def test_cabecalhos_de_seguranca(cliente):
+    r = cliente.get("/")
+    assert r.headers["X-Content-Type-Options"] == "nosniff"
+    assert r.headers["X-Frame-Options"] == "DENY"
+    assert "default-src 'self'" in r.headers["Content-Security-Policy"]
+    assert "cdn.jsdelivr.net" not in r.headers["Content-Security-Policy"]
+    # só a página do contrato da API pode carregar o Swagger UI do CDN
+    assert "cdn.jsdelivr.net" in cliente.get("/docs").headers["Content-Security-Policy"]
+
+
+def test_chave_com_acento_e_recusada_sem_erro(cliente):
+    r = cliente.patch(
+        "/api/ocorrencias/nao-existe",
+        json={"status": "validada"},
+        headers={"X-API-Key": "chavé-errada".encode()},
+    )
+    assert r.status_code == 401

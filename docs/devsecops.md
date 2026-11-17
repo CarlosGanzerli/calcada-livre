@@ -124,7 +124,7 @@ Como usamos IaaS (uma VM), a maior parte da responsabilidade é nossa. Num PaaS 
 |---|---|---|---|
 | Ocorrência (tipo, coordenada, data, origem) | Não | PostgreSQL no disco da VM, região Brazil South | Banco sem porta exposta; só a API acessa |
 | Descrição livre | Pode conter por engano | Mesmo banco | A automação de triagem remove telefone, e-mail e CPF antes do encaminhamento; a página orienta a não escrever dados pessoais |
-| IP de quem acessa | Sim (dado pessoal indireto) | Não é gravado: o log de acesso do Caddy fica desligado (padrão); só erros vão para o log do container, com rotação de 10 MB × 3 | Não é usado nem enviado a terceiros |
+| IP de quem acessa | Sim (dado pessoal indireto) | Não é gravado: o log de acesso do Caddy fica desligado (padrão) e a API roda sem log de acesso (`--no-access-log`); só erros vão para o log do container, com rotação de 10 MB × 3 | Não é usado nem enviado a terceiros |
 | Logs da automação de triagem | Não | Volume do serviço `robo` na VM | Recusam descrição, foto e coordenada |
 | Métricas | Não | Prometheus (15 dias) | Só contagens e tempos |
 | Segredos | Não pessoais, mas sensíveis | `/etc/calcada-livre/.env` (root, 600), `terraform.tfstate` local, GitHub Secrets | Fora do Git, Gitleaks no pipeline |
