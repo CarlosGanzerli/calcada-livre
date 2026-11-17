@@ -125,14 +125,16 @@ Nenhum dado sai do Brasil, exceto o mapa de fundo, que o navegador do cidadão b
 
 ### Estimativa de custo
 
-Valores de referência de lista da Azure para a região Brazil South, em dólar, por mês (730 h). **Confirmar na [calculadora de preços da Azure](https://azure.microsoft.com/pt-br/pricing/calculator/) e anexar o print no PDF**, porque os preços mudam.
+Preços de tabela da Azure (pagamento por uso) para a região Brazil South, em dólar, consultados em 16/11/2026 na [API pública de preços](https://prices.azure.com/api/retail/prices?currencyCode=USD&$filter=armRegionName%20eq%20'brazilsouth'%20and%20armSkuName%20eq%20'Standard_B2s'%20and%20priceType%20eq%20'Consumption'), a mesma fonte da [calculadora de preços](https://azure.microsoft.com/pt-br/pricing/calculator/). Mês de 730 horas.
 
-| Recurso | Configuração | US$/mês (aprox.) |
-|---|---|---|
-| Máquina virtual | B2s Linux (2 vCPU, 4 GB), ligada 24 h | ~48 |
-| Disco do sistema | Standard SSD 30 GB (E4) | ~3 |
-| IP público | Standard, estático | ~3,65 |
-| Tráfego de saída | primeiros 100 GB/mês gratuitos | 0 |
-| **Total** | | **~55 (≈ R$ 300)** |
+| Recurso | Configuração | Preço unitário | US$/mês |
+|---|---|---|---|
+| Máquina virtual | B2s Linux (2 vCPU, 4 GB), ligada 24 h | US$ 0,0672 por hora | 49,06 |
+| Disco do sistema | Standard SSD de 30 GB (faixa E4) | US$ 4,48 por mês | 4,48 |
+| IP público | Standard, IPv4 estático | US$ 0,005 por hora | 3,65 |
+| Tráfego de saída | primeiros 100 GB/mês gratuitos | | 0 |
+| **Total** | | | **57,19** |
 
-Durante a avaliação (cerca de 3 semanas) o custo fica em torno de US$ 40, coberto pelos US$ 100 de crédito do Azure for Students. Para economizar: região East US (~35% mais barata, mas os dados saem do Brasil) ou B1ms (2 GB, ~US$ 18, apertado para Postgres + Grafana + Prometheus). Depois da correção: `terraform destroy` apaga tudo e o custo zera.
+- **No período de avaliação:** três semanas no ar custam cerca de US$ 40, cobertos pelos US$ 100 de crédito do Azure for Students.
+- **Para gastar menos:** a mesma VM na região East US custa US$ 30,37 por mês (38% menos), mas os dados sairiam do Brasil. A B1ms (1 vCPU, 2 GB) custa US$ 24,53 por mês em Brazil South, mas fica apertada para Postgres, Grafana e Prometheus juntos.
+- **Depois da correção:** `terraform destroy` apaga tudo e o custo zera.

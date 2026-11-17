@@ -77,10 +77,12 @@ Passo a passo para quem nunca usou Azure: [docs/guia-deploy.md](docs/guia-deploy
 
 ```bash
 cd infra/terraform
-cp terraform.tfvars.example terraform.tfvars   # assinatura, seu IP e sua chave SSH
+./preparar.sh SEU_IP             # cria o terraform.tfvars: assinatura, seu IP, chave SSH, região e VM
 terraform init && terraform apply
 terraform output url_publica
 ```
+
+O `preparar.sh` usa a ferramenta `az` (já instalada no Azure Cloud Shell). Sem ela, copie `terraform.tfvars.example` para `terraform.tfvars` e preencha à mão.
 
 ## Estrutura
 

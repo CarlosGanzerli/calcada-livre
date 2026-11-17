@@ -13,7 +13,7 @@ Tempo total: cerca de 30 minutos. Em vários passos há um aviso **PRINT**: é u
 
 No seu computador, abra https://api.ipify.org. A página mostra só um número, como `200.100.50.25`. Anote: ele é usado no passo 4.
 
-Esse número é o endereço da sua internet. O SSH e o Grafana da VM vão abrir só para ele. Se a sua internet trocar de IP (acontece ao reiniciar o modem), repita os passos 4 e 5 com o número novo.
+Esse número é o endereço da sua internet. O SSH e o Grafana da VM vão abrir só para ele. Se a sua internet trocar de IP (acontece ao reiniciar o modem), rode de novo o `./preparar.sh` com o número novo e depois `terraform apply`.
 
 ## 3. Abrir o Cloud Shell
 
@@ -21,34 +21,28 @@ Esse número é o endereço da sua internet. O SSH e o Grafana da VM vão abrir 
 2. Clique no ícone `>_` no topo da tela e escolha **Bash**.
 3. Na pergunta sobre armazenamento, escolha **Montar conta de armazenamento** (*Mount storage account*), selecione a assinatura *Azure for Students* e deixe a Azure criar a conta. Custa centavos e guarda os seus arquivos entre uma sessão e outra.
 
+Se a criação da conta de armazenamento falhar (acontece em contas de estudante), volte e escolha **Nenhuma conta de armazenamento necessária** (*No storage account required*). Funciona igual, com um cuidado: os arquivos somem quando a sessão fecha, então faça os passos 4 a 7 de uma vez, sem fechar a aba. A tabela do fim do guia explica como continuar se a sessão cair.
+
 ## 4. Preparar
 
-Cole no Cloud Shell este bloco inteiro e aperte Enter:
+Cole no Cloud Shell este bloco e aperte Enter:
 
 ```bash
 git clone https://github.com/CarlosGanzerli/calcada-livre.git
 cd calcada-livre/infra/terraform
-test -f ~/.ssh/id_ed25519 || ssh-keygen -t ed25519 -N "" -f ~/.ssh/id_ed25519
 ```
 
 Agora cole esta linha **trocando o número pelo seu IP do passo 2**:
 
 ```bash
-MEU_IP=200.100.50.25
+./preparar.sh 200.100.50.25
 ```
 
-E depois este bloco, sem alterar nada. Ele cria o arquivo `terraform.tfvars` com a sua assinatura, o seu IP e a sua chave:
+O [`preparar.sh`](../infra/terraform/preparar.sh) cria a chave SSH, descobre a sua assinatura e escolhe uma região e um tamanho de VM que a sua conta pode usar (contas de estudante só aceitam algumas regiões). No fim, ele grava o arquivo `terraform.tfvars`.
 
-```bash
-cat > terraform.tfvars <<EOF
-subscription_id   = "$(az account show --query id -o tsv)"
-admin_cidr        = "${MEU_IP}/32"
-ssh_chave_publica = "$(cat ~/.ssh/id_ed25519.pub)"
-EOF
-cat terraform.tfvars
-```
+**O que você deve ver:** um resumo com a assinatura, o seu IP terminado em `/32`, a região e o tamanho da VM. Esse arquivo fica só no seu Cloud Shell: o `.gitignore` impede que ele vá para o GitHub.
 
-**O que você deve ver:** três linhas, com o ID da assinatura, o seu IP terminado em `/32` e uma chave começando com `ssh-ed25519`. Esse arquivo fica só no seu Cloud Shell: o `.gitignore` impede que ele vá para o GitHub.
+Se a região escolhida não for `brazilsouth`, o script avisa. Tudo funciona do mesmo jeito, mas os dados deixam de ficar no Brasil: atualize a tabela da LGPD e a estimativa de custo em [devsecops.md](devsecops.md).
 
 ## 5. Criar a infraestrutura
 
@@ -114,9 +108,13 @@ As imagens no GHCR já são públicas (conferido em 16/11/2026), então a VM con
 
 ## 8. Pipeline com deploy automático
 
-No GitHub, abra a aba **Actions**, clique em **devsecops**, depois em **Run workflow** e confirme. Quando terminar (cerca de 3 minutos), todos os jobs ficam verdes, inclusive **Conferir deploy em produção**.
+A partir de agora, todo push na `main` que passar pelas cinco verificações chega sozinho à produção. Para ver isso acontecer, faça um push de verdade: preencha a URL pública na Ficha Técnica do [README](../README.md) (linha *URL e repositório*) e envie.
 
-> **PRINT 6 · `06-pipeline-verde.png`**: a página da execução com todos os jobs verdes.
+No GitHub, abra a aba **Actions** e acompanhe a execução (cerca de 4 minutos). O último job, **Conferir deploy em produção**, só fica verde quando a VM responde em `/health` com o commit que acabou de ser aprovado.
+
+Também dá para repetir sem alterar nada: **Actions**, **devsecops**, **Run workflow**.
+
+> **PRINT 6 · `06-pipeline-verde.png`**: a página da execução com todos os jobs verdes, inclusive **Conferir deploy em produção**.
 >
 > **PRINT 7 · `07-pipeline-barrado.png`**: a página da execução barrada (o link está em `docs/devsecops.md`, seção 3), com o job do Gitleaks em vermelho e a publicação pulada.
 
@@ -157,11 +155,12 @@ Abra a [calculadora de preços da Azure](https://azure.microsoft.com/pt-br/prici
 
 | O que aparece | O que fazer |
 |---|---|
-| `RequestDisallowedByAzure` ou "disallowed by policy" no `terraform apply` | A assinatura de estudante só permite algumas regiões. Rode `az policy assignment list --query "[].parameters.listOfAllowedLocations.value" -o tsv`, escolha uma das regiões listadas e acrescente ao `terraform.tfvars` a linha `regiao = "nome-da-regiao"`. Depois rode `terraform apply` de novo |
-| `SkuNotAvailable` | O tamanho B2s está sem vaga na região. Acrescente ao `terraform.tfvars` a linha `tamanho_vm = "Standard_B2s_v2"` e rode `terraform apply` de novo |
+| `RequestDisallowedByAzure` ou "disallowed by policy" no `terraform apply` | A assinatura não aceita a região escolhida. Rode `az policy assignment list --query "[].parameters.listOfAllowedLocations.value" -o tsv`, escolha uma das regiões listadas, troque a linha `regiao` do `terraform.tfvars` e rode `terraform apply` de novo |
+| `SkuNotAvailable` | O tamanho da VM está sem vaga na região. Troque a linha `tamanho_vm` do `terraform.tfvars` para `"Standard_B2s_v2"` (ou `"Standard_B2as_v2"`) e rode `terraform apply` de novo |
 | O MVP não abre depois de 10 minutos | Rode `az vm run-command invoke -g rg-calcada-livre -n vm-calcada-livre --command-id RunShellScript --scripts "cloud-init status; journalctl -u calcada-deploy -n 20 --no-pager" --query "value[0].message" -o tsv` e veja a mensagem |
-| O Grafana não abre | O seu IP mudou. Repita os passos 2, 4 (a partir de `MEU_IP=`) e 5 |
+| O Grafana não abre | O seu IP mudou. Repita o passo 2, rode `./preparar.sh` com o IP novo e depois `terraform apply` |
 | O Cloud Shell fechou | Abra de novo e rode `cd calcada-livre/infra/terraform` |
+| O Cloud Shell fechou e a pasta `calcada-livre` sumiu (sessão sem conta de armazenamento) | A VM continua no ar. A URL pública é `https://` mais o **nome DNS** que aparece na página da VM `vm-calcada-livre`, no portal. A senha do Grafana sai com `az vm run-command invoke -g rg-calcada-livre -n vm-calcada-livre --command-id RunShellScript --scripts "grep GRAFANA /etc/calcada-livre/.env" --query "value[0].message" -o tsv`. Sem o `terraform.tfstate`, não rode `terraform apply` de novo; para desligar tudo, use o `az group delete` do fim do guia |
 
 ## Desligar tudo depois da correção
 
@@ -169,4 +168,4 @@ Abra a [calculadora de preços da Azure](https://azure.microsoft.com/pt-br/prici
 terraform destroy    # digite: yes
 ```
 
-Isso apaga a VM, o IP e a rede, e o custo volta a zero.
+Isso apaga a VM, o IP e a rede, e o custo volta a zero. Se o `terraform.tfstate` não existir mais, o mesmo resultado sai com `az group delete --name rg-calcada-livre --yes`.

@@ -96,7 +96,8 @@ jobs:
   publicar:
     name: Publicar imagem (GHCR)
     needs: [testes, gitleaks, semgrep, trivy, terraform]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Só a main publica: num push ou numa execução manual (Run workflow). Pull request só verifica.
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: read
