@@ -134,19 +134,19 @@ Também dá para repetir sem alterar nada: **Actions**, **devsecops**, **Run wor
 
 ## 9. Observabilidade: painel e alerta
 
-1. No Cloud Shell, rode `terraform output -raw grafana` e abra o endereço no navegador. Usuário `admin`; a senha é o resultado de `terraform output -raw grafana_senha`.
+1. No Cloud Shell, rode `terraform output -raw grafana` e abra o endereço no navegador. Usuário `admin`; a senha é o resultado de `terraform output -raw grafana_senha`. O endereço usa o número do IP da VM, e não o nome do site: o site manda o navegador usar só HTTPS nesse nome (cabeçalho HSTS), e o Grafana responde em HTTP.
 2. Abra o painel **Calçada Livre · 4 sinais de ouro**. Recarregue a página do MVP algumas vezes para gerar tráfego.
 
    > **PRINT 8 · `08-grafana-sinais-de-ouro.png`**: o painel com latência, tráfego, erros e saturação.
 
-3. Dispare o alerta parando a API. O comando também pausa a rotina de deploy, que religaria a API sozinha em menos de 1 minuto:
+3. Dispare o alerta parando a API. O comando também pausa a rotina de deploy (o agendamento e uma execução que já esteja em andamento), que religaria a API sozinha em menos de 1 minuto:
 
    ```bash
    az vm run-command invoke -g rg-calcada-livre -n vm-calcada-livre --command-id RunShellScript \
-     --scripts "systemctl stop calcada-deploy.timer; cd /opt/calcada-livre && docker compose --env-file /etc/calcada-livre/.env stop api"
+     --scripts "systemctl stop calcada-deploy.timer calcada-deploy.service; cd /opt/calcada-livre && docker compose --env-file /etc/calcada-livre/.env stop api"
    ```
 
-   Espere 2 minutos e recarregue o painel: o quadro **Alertas ativos** mostra **ApiForaDoAr** e o quadro **API no ar** fica vermelho.
+   Espere 2 minutos e recarregue o painel: o quadro **Alertas ativos** mostra **ApiForaDoAr** e o quadro **API no ar** fica vermelho. Se o momento passar, o Grafana guarda o histórico: no seletor de tempo do painel, escolha um intervalo que termine durante a parada.
 
    > **PRINT 9 · `09-alerta-disparado.png`**: o painel com o alerta disparado.
 
@@ -173,6 +173,7 @@ Abra a [calculadora de preços da Azure](https://azure.microsoft.com/pt-br/prici
 | `SkuNotAvailable` | O tamanho da VM está sem vaga na região. Troque a linha `tamanho_vm` do `terraform.tfvars` para `"Standard_B2s_v2"` (ou `"Standard_B2as_v2"`) e rode `terraform apply` de novo |
 | O MVP não abre depois de 10 minutos | Rode `az vm run-command invoke -g rg-calcada-livre -n vm-calcada-livre --command-id RunShellScript --scripts "cloud-init status; journalctl -u calcada-deploy -n 20 --no-pager" --query "value[0].message" -o tsv` e veja a mensagem |
 | O Grafana não abre | O seu IP mudou. Repita o passo 2, rode `./preparar.sh` com o IP novo e depois `terraform apply` |
+| O Grafana mostra `ERR_SSL_PROTOCOL_ERROR` | O endereço foi aberto com o nome do site. Use o número do IP: `http://` mais o resultado de `terraform output -raw ip_publico` mais `:3000` |
 | O Cloud Shell fechou | Abra de novo e rode `cd calcada-livre/infra/terraform` |
 | O Cloud Shell fechou e a pasta `calcada-livre` sumiu (sessão sem conta de armazenamento) | A VM continua no ar. A URL pública é `https://` mais o **nome DNS** que aparece na página da VM `vm-calcada-livre`, no portal. A senha do Grafana sai com `az vm run-command invoke -g rg-calcada-livre -n vm-calcada-livre --command-id RunShellScript --scripts "grep GRAFANA /etc/calcada-livre/.env" --query "value[0].message" -o tsv`. Sem o `terraform.tfstate`, não rode `terraform apply` de novo; para desligar tudo, use o `az group delete` do fim do guia |
 

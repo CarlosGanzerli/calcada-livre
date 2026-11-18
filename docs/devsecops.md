@@ -44,6 +44,10 @@ O Trivy aponta como CRITICAL a regra que libera 80/443 para a internet (AVD-AZU-
 
 ![Saída do terraform apply: 13 recursos criados](evidencias/01-terraform-apply.png)
 
+As regras do firewall (NSG) como ficaram no portal da Azure: 80 e 443 para a internet; 22 e 3000 só para o IP da equipe; todo o resto negado. O final do IP e o ID da assinatura foram cobertos nesta imagem porque o repositório é público.
+
+![Regras de entrada do NSG no portal da Azure](evidencias/05-firewall-nsg.png)
+
 ## 3. Pipeline DevSecOps (4,0)
 
 Arquivo: `.github/workflows/devsecops.yml`. Roda a cada push e pull request. As cinco verificações rodam em paralelo, e a imagem só é publicada se todas passarem.
@@ -120,15 +124,19 @@ Regras de alerta (`infra/monitoring/prometheus/alertas.yml`): **ApiForaDoAr** (A
 
 **Como disparar o alerta:** o passo 9 do [guia de deploy](guia-deploy.md) para a API na VM (pausando a rotina de deploy, que a religaria em menos de 1 minuto). Em cerca de 1 minuto e meio o ApiForaDoAr passa a *firing* e o painel fica vermelho.
 
-**Teste local de 16/11/2026**, com a mesma stack deste repositório (`docker compose up`) e tráfego gerado por script:
+**Produção, 18/11/2026.** O painel aberto pelo IP público da VM, com o tráfego real do MVP, do healthcheck e da conferência do pipeline:
 
-![Painel dos 4 sinais de ouro no teste local](evidencias/grafana-painel-teste-local.png)
+![Painel dos 4 sinais de ouro em produção](evidencias/08-grafana-sinais-de-ouro.png)
 
-Com a API parada de propósito às 23:29:52, o alerta ApiForaDoAr passou a *firing* 67 segundos depois (a regra espera 1 minuto sem resposta):
+**Alerta disparado em produção.** Às 13h04 a API foi parada de propósito na VM, com a rotina de deploy pausada. O Prometheus deixou de conseguir ler a API e, 1 minuto depois, o alerta `ApiForaDoAr` passou a *firing*. A API foi religada às 13h19. As duas imagens abaixo são o mesmo painel com o intervalo de tempo terminando às 13h12, no meio da parada: foram tiradas depois, pelo histórico do Grafana, e o seletor de tempo no topo mostra o intervalo.
 
-![Alerta ApiForaDoAr disparado no teste local](evidencias/grafana-alerta-teste-local.png)
+![Painel durante a parada: API fora do ar e 1 alerta disparado](evidencias/09-alerta-disparado.png)
+
+![Quadro Alertas ativos com o ApiForaDoAr em firing](evidencias/09b-alertas-ativos.png)
 
 O enunciado também permite rodar Prometheus e Grafana no computador apontando para o MVP publicado; aqui eles rodam na própria VM porque o `/metrics` é bloqueado na internet de propósito.
+
+**Limitação conhecida:** o Grafana responde em HTTP na porta 3000 e é aberto pelo número do IP da VM, porque o nome do site só aceita HTTPS (cabeçalho HSTS). Isso é aceitável neste trabalho porque o firewall só deixa o IP da equipe chegar a essa porta. Num ambiente real ele ficaria atrás do Caddy, com HTTPS, como a API.
 
 ## 5. Documentação (2,0)
 

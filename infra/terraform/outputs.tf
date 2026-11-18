@@ -3,9 +3,11 @@ output "url_publica" {
   value       = "https://${local.fqdn}"
 }
 
+# Pelo número do IP, e não pelo nome do site, de propósito: o site envia o cabeçalho HSTS,
+# que faz o navegador exigir HTTPS em todas as portas desse nome, e o Grafana responde em HTTP.
 output "grafana" {
   description = "Painel do Grafana (abre só do seu IP). Usuário: admin"
-  value       = "http://${local.fqdn}:3000"
+  value       = "http://${azurerm_public_ip.pip.ip_address}:3000"
 }
 
 output "ssh" {
