@@ -4,6 +4,14 @@
 
 Como o MVP chega ao cidadão: empacotado em container, numa nuvem descrita por código, por um pipeline que barra segredo vazado e vulnerabilidade, e com monitoramento que avisa quando algo cai.
 
+**No ar desde 18/11/2026:** <https://calcada-livre-vsqie.northcentralus.cloudapp.azure.com>
+
+![MVP no ar pela URL pública, com as ocorrências do cenário de demonstração no mapa](evidencias/03-mvp-no-ar.png)
+
+A mesma página, mais abaixo, com as ocorrências já triadas pela automação (protocolo, prioridade e subprefeitura). Os dados são simulados.
+
+![Tabela de ocorrências em produção depois da triagem automática](evidencias/03b-ocorrencias-triadas.png)
+
 ## 1. Container (2,0)
 
 | Requisito | Como foi atendido | Onde |
@@ -13,6 +21,10 @@ Como o MVP chega ao cidadão: empacotado em container, numa nuvem descrita por c
 | Sem segredo na imagem | Nenhum `ENV` com senha; tudo chega por variável de ambiente em tempo de execução. `.dockerignore` exclui `.env` e bancos locais. O Trivy também procura segredos | `mvp/.dockerignore` |
 | Stack com `docker compose` | `docker compose up -d` sobe banco, API, Caddy e, com perfis, a automação de triagem (serviço `robo`), Prometheus, Grafana e node-exporter | `docker-compose.yml` |
 | Endurecimento extra | API com `read_only`, `cap_drop: ALL`, `no-new-privileges`; banco e Prometheus sem porta publicada; healthchecks; rotação de logs | `docker-compose.yml` |
+
+**Produção, 18/11/2026:** os sete containers rodando na VM da Azure (`docker compose ps`, pelo Cloud Shell, sem SSH).
+
+![Saída do docker compose ps na VM: sete serviços no ar](evidencias/04-docker-compose-ps.png)
 
 ## 2. Infraestrutura como código (3,0)
 
@@ -44,6 +56,15 @@ Arquivo: `.github/workflows/devsecops.yml`. Roda a cada push e pull request. As 
 - **Terraform** confere a formatação, valida a configuração (`terraform validate`) e roda os testes da infraestrutura (`terraform test`): `admin_cidr = 0.0.0.0/0` tem de ser recusado, e SSH e Grafana só podem aceitar o IP da equipe.
 - **Segredos no GitHub Secrets:** `ROBO_API_KEY` (usada no teste de fumaça para provar que a autenticação funciona em produção sem alterar dados). A publicação no GHCR usa o `GITHUB_TOKEN` temporário do próprio Actions. A URL fica em *Variables* (`MVP_URL`), porque não é segredo.
 - **Deploy automático:** a VM roda `infra/deploy/atualizar.sh` a cada minuto (timer do systemd). Ele baixa a imagem mais recente publicada, lê nela o commit que o pipeline aprovou (`GIT_SHA`) e deixa as configurações (compose, Caddyfile, Prometheus) nesse mesmo commit. Um commit barrado não chega à VM, nem como imagem nem como configuração. Se a configuração do proxy ou do monitoramento mudou, Caddy, Prometheus e Grafana são reiniciados para carregá-la. O job final só fica verde quando `GET /health` em produção responde com o commit que acabou de passar no pipeline.
+
+**Deploy automático em produção, 18/11/2026.** Na [execução nº 9](https://github.com/CarlosGanzerli/calcada-livre/actions/runs/44337279436), a imagem do commit `1abe301` foi publicada às 12h36min16s (horário de Brasília) e a VM passou a responder com esse commit 1 minuto e 55 segundos depois, sem ninguém entrar na máquina. Trecho do log do job **Conferir deploy em produção**:
+
+```text
+tentativa 10: produção em '70e4b73742a3d8890ae84a9427cd7ffdc271dc74'
+tentativa 11: produção em '1abe3014457f3c9e4eac97a828e66245c92ead3e'
+Deploy confirmado.
+Fumaça OK
+```
 
 A chave `ROBO_API_KEY` cadastrada no GitHub Secrets (o valor não aparece para ninguém, nem para quem cadastrou):
 
