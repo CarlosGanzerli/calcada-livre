@@ -89,7 +89,7 @@ Em 16/11/2026 foi feito, de propósito, um commit com uma chave de acesso colada
 | Semgrep | passou | passou |
 | Trivy | passou | passou |
 | Publicar imagem | **não executou** | publicou |
-| Conferir deploy | não executou | executou |
+| Conferir deploy | não executou | executou, só com aviso: ainda não havia URL de produção |
 
 Trecho do log do Gitleaks na execução barrada (o valor da chave é ocultado pelo próprio Gitleaks):
 
@@ -106,7 +106,7 @@ WRN leaks found: 1
 
 ![Execução nº 2 do pipeline: Gitleaks em vermelho, publicação e deploy pulados](evidencias/07-pipeline-barrado.png)
 
-- Como a publicação depende de todas as verificações, a imagem do commit barrado nunca existiu no GHCR, e a VM continuou no commit anterior.
+- Como a publicação depende de todas as verificações, a imagem do commit barrado nunca existiu no GHCR: não há o que a VM baixar. Em 16/11, data da demonstração, a produção ainda não estava no ar.
 - O Semgrep não acusou essa chave (ela não tem um formato conhecido); o Gitleaks acusou pela entropia. Por isso as barreiras se somam.
 - A chave falsa continua no histórico do Git, como evidência, e está registrada no `.gitleaksignore`. Com um segredo de verdade, apagar o arquivo não basta: o primeiro passo é **revogar** a chave.
 - O job **Conferir deploy** só confere a produção depois que a variável `MVP_URL` é cadastrada (passo 6 do [guia de deploy](guia-deploy.md)); antes disso ele registra um aviso e não falha.

@@ -35,7 +35,7 @@ FIAP Global Solution 2026.2 · Engenharia de Software 4º ano · disciplina *Sec
 | Proposta de valor | Reunir relatos de cidadãos, de um carrinho inspetor (Maker Lab) e de uma câmera com IA num mapa único, triar automaticamente e encaminhar à subprefeitura certa com prioridade |
 | Componentes | Página web com mapa e API (este repositório) · automação de triagem em RPA ([calcada-livre-rpa](https://github.com/CarlosGanzerli/calcada-livre-rpa)) · carrinho inspetor (Maker Lab) · visão computacional · pipeline de dados · assistente com LLM local |
 | Fontes de dados | Relatos do app, leituras do carrinho, detecções da câmera, previsão Open-Meteo, pontos de interesse públicos |
-| Modelos de IA | YOLO (detecção de barreiras), classificador embarcado no carrinho, LLM local (assistente) |
+| Modelos de IA | YOLO (visão computacional, detecção de barreiras) · LLM local (assistente) |
 | URL e repositório | MVP: https://calcada-livre-vsqie.northcentralus.cloudapp.azure.com · Repositório: https://github.com/CarlosGanzerli/calcada-livre |
 | Indicadores de impacto | Tempo entre relato e encaminhamento · % de relatos triados sem intervenção humana · barreiras de prioridade alta perto de hospitais, escolas e pontos de ônibus |
 | ODS | 11 (cidades e comunidades sustentáveis) · 10 (redução das desigualdades) · 3 (saúde e bem-estar) |
