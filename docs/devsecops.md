@@ -28,6 +28,10 @@ Terraform com o provedor `azurerm` cria grupo de recursos, rede virtual, sub-red
 
 O Trivy aponta como CRITICAL a regra que libera 80/443 para a internet (AVD-AZU-0047). É intencional, porque é o site público, e está justificado no `.trivyignore`; as portas administrativas continuam protegidas pela validação.
 
+**Produção, 18/11/2026:** saída do `terraform apply` no Azure Cloud Shell, com os 13 recursos criados e a URL pública.
+
+![Saída do terraform apply: 13 recursos criados](evidencias/01-terraform-apply.png)
+
 ## 3. Pipeline DevSecOps (4,0)
 
 Arquivo: `.github/workflows/devsecops.yml`. Roda a cada push e pull request. As cinco verificações rodam em paralelo, e a imagem só é publicada se todas passarem.
@@ -40,6 +44,10 @@ Arquivo: `.github/workflows/devsecops.yml`. Roda a cada push e pull request. As 
 - **Terraform** confere a formatação, valida a configuração (`terraform validate`) e roda os testes da infraestrutura (`terraform test`): `admin_cidr = 0.0.0.0/0` tem de ser recusado, e SSH e Grafana só podem aceitar o IP da equipe.
 - **Segredos no GitHub Secrets:** `ROBO_API_KEY` (usada no teste de fumaça para provar que a autenticação funciona em produção sem alterar dados). A publicação no GHCR usa o `GITHUB_TOKEN` temporário do próprio Actions. A URL fica em *Variables* (`MVP_URL`), porque não é segredo.
 - **Deploy automático:** a VM roda `infra/deploy/atualizar.sh` a cada minuto (timer do systemd). Ele baixa a imagem mais recente publicada, lê nela o commit que o pipeline aprovou (`GIT_SHA`) e deixa as configurações (compose, Caddyfile, Prometheus) nesse mesmo commit. Um commit barrado não chega à VM, nem como imagem nem como configuração. Se a configuração do proxy ou do monitoramento mudou, Caddy, Prometheus e Grafana são reiniciados para carregá-la. O job final só fica verde quando `GET /health` em produção responde com o commit que acabou de passar no pipeline.
+
+A chave `ROBO_API_KEY` cadastrada no GitHub Secrets (o valor não aparece para ninguém, nem para quem cadastrou):
+
+![GitHub Secrets do repositório com a chave ROBO_API_KEY](evidencias/02-github-secrets.png)
 
 ### Execução barrada e execução corrigida
 
