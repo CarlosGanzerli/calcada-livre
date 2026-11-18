@@ -36,7 +36,7 @@ FIAP Global Solution 2026.2 · Engenharia de Software 4º ano · disciplina *Sec
 | Componentes | Página web com mapa e API (este repositório) · automação de triagem em RPA ([calcada-livre-rpa](https://github.com/CarlosGanzerli/calcada-livre-rpa)) · carrinho inspetor (Maker Lab) · visão computacional · pipeline de dados · assistente com LLM local |
 | Fontes de dados | Relatos do app, leituras do carrinho, detecções da câmera, previsão Open-Meteo, pontos de interesse públicos |
 | Modelos de IA | YOLO (detecção de barreiras), classificador embarcado no carrinho, LLM local (assistente) |
-| URL e repositório | MVP: `<URL pública: preencher após o terraform apply>` · Repositório: https://github.com/CarlosGanzerli/calcada-livre |
+| URL e repositório | MVP: https://calcada-livre-vsqie.northcentralus.cloudapp.azure.com · Repositório: https://github.com/CarlosGanzerli/calcada-livre |
 | Indicadores de impacto | Tempo entre relato e encaminhamento · % de relatos triados sem intervenção humana · barreiras de prioridade alta perto de hospitais, escolas e pontos de ônibus |
 | ODS | 11 (cidades e comunidades sustentáveis) · 10 (redução das desigualdades) · 3 (saúde e bem-estar) |
 
@@ -46,7 +46,7 @@ FIAP Global Solution 2026.2 · Engenharia de Software 4º ano · disciplina *Sec
 
 ![Arquitetura de produção](docs/arquitetura.svg)
 
-- **Uma VM Ubuntu na Azure (Brazil South)**, criada inteira por Terraform, roda tudo com `docker compose`: Caddy (HTTPS automático), API FastAPI, PostgreSQL, automação de triagem, Prometheus, Grafana e node-exporter.
+- **Uma VM Ubuntu na Azure (região North Central US)**, criada inteira por Terraform, roda tudo com `docker compose`: Caddy (HTTPS automático), API FastAPI, PostgreSQL, automação de triagem, Prometheus, Grafana e node-exporter.
 - **Firewall (NSG):** só as portas 80 e 443 ficam abertas para a internet. SSH (22) e Grafana (3000) só aceitam o IP da equipe, e o Terraform **recusa** `0.0.0.0/0` para essas portas.
 - **Deploy por pull:** a VM verifica a cada minuto se há uma imagem nova aprovada e se atualiza sozinha. O pipeline então confere em produção que a versão nova está no ar. Assim o SSH nunca precisa ficar aberto para os endereços (variáveis) dos runners do GitHub.
 
@@ -100,7 +100,7 @@ docs/                    arquitetura, DevSecOps, custos, LGPD, guia de deploy e 
 ## Segurança e LGPD (resumo)
 
 - Nenhum dado pessoal é coletado. A ocorrência tem tipo, coordenada e descrição; a automação de triagem remove telefone, e-mail e CPF escritos por engano.
-- Os dados ficam no Brasil (região Brazil South), no disco da VM.
+- Os dados ficam no disco da VM, na região North Central US (EUA): a assinatura de estudante não oferece em Brazil South os tamanhos de VM do projeto. Num ambiente real, uma variável do Terraform leva tudo para Brazil South ([detalhes](docs/devsecops.md#onde-ficam-os-dados-pessoais-lgpd)).
 - Segredos: gerados aleatoriamente pelo Terraform, gravados só em `/etc/calcada-livre/.env` na VM (root, 600) e no `terraform.tfstate` local; a chave de acesso da automação também fica no GitHub Secrets. Nada disso vai para o Git (`.gitignore`), e o Gitleaks barra o push se algo escapar.
 - Container sem root, sistema de arquivos somente leitura, sem capabilities; `/metrics` bloqueado na internet.
 

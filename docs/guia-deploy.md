@@ -106,7 +106,17 @@ As imagens no GHCR já são públicas (conferido em 16/11/2026), então a VM con
 
    **O que você deve ver:** cinco linhas começando com `ok` e, no final, `Fumaça OK`.
 
-4. No portal da Azure, procure por **nsg-calcada-livre** e abra **Regras de segurança de entrada**.
+4. Opcional: carregue o cenário de demonstração, para o mapa não ficar vazio. São 8 ocorrências simuladas, uma para cada decisão da automação de triagem. O comando cria as ocorrências pela própria API e reinicia a automação, que faz a triagem assim que liga:
+
+   ```bash
+   az vm run-command invoke -g rg-calcada-livre -n vm-calcada-livre --command-id RunShellScript \
+     --scripts "cd /opt/calcada-livre && docker compose --env-file /etc/calcada-livre/.env exec -T robo python -m triagem.semear && docker compose --env-file /etc/calcada-livre/.env restart robo" \
+     --query "value[0].message" -o tsv
+   ```
+
+   Espere 1 minuto e recarregue a página do MVP: as ocorrências aparecem no mapa e na tabela, já com status e prioridade.
+
+5. No portal da Azure, procure por **nsg-calcada-livre** e abra **Regras de segurança de entrada**.
 
    > **PRINT 5 · `05-firewall-nsg.png`**: a lista de regras, mostrando que as portas 22 e 3000 aceitam só o seu IP e que 80 e 443 estão abertas para a internet.
 
@@ -151,7 +161,7 @@ Também dá para repetir sem alterar nada: **Actions**, **devsecops**, **Run wor
 
 ## 10. Custo
 
-Abra a [calculadora de preços da Azure](https://azure.microsoft.com/pt-br/pricing/calculator/), adicione **Máquinas Virtuais** (região *Brazil South*, Linux Ubuntu, instância *B2s*, 730 horas), um **disco gerenciado** *Standard SSD E4* e um **endereço IP público** *Standard* estático.
+Abra a [calculadora de preços da Azure](https://azure.microsoft.com/pt-br/pricing/calculator/), adicione **Máquinas Virtuais** (a região e a instância que apareceram no resumo do `preparar.sh`; nesta entrega, *North Central US* e *B2as v2*; Linux Ubuntu, 730 horas), um **disco gerenciado** *Standard SSD E4* e um **endereço IP público** *Standard* estático.
 
 > **PRINT 10 · `10-custo-calculadora.png`**: o resumo com o total mensal.
 

@@ -16,7 +16,7 @@ Como o MVP chega ao cidadão: empacotado em container, numa nuvem descrita por c
 
 ## 2. Infraestrutura como código (3,0)
 
-Terraform com o provedor `azurerm` cria grupo de recursos, rede virtual, sub-rede, NSG (firewall), IP público com nome DNS, interface de rede e a VM Ubuntu 24.04 (B2s). O `cloud-init` instala Docker, clona este repositório, grava o `.env` com senhas aleatórias e liga o timer de deploy. Nada é criado clicando no portal.
+Terraform com o provedor `azurerm` cria grupo de recursos, rede virtual, sub-rede, NSG (firewall), IP público com nome DNS, interface de rede e a VM Ubuntu 24.04 (B2as_v2: 2 vCPU e 8 GB). O `cloud-init` instala Docker, clona este repositório, grava o `.env` com senhas aleatórias e liga o timer de deploy. Nada é criado clicando no portal.
 
 | Requisito | Como foi atendido |
 |---|---|
@@ -122,27 +122,36 @@ Como usamos IaaS (uma VM), a maior parte da responsabilidade é nossa. Num PaaS 
 
 | Dado | Pessoal? | Onde fica | Proteção |
 |---|---|---|---|
-| Ocorrência (tipo, coordenada, data, origem) | Não | PostgreSQL no disco da VM, região Brazil South | Banco sem porta exposta; só a API acessa |
+| Ocorrência (tipo, coordenada, data, origem) | Não | PostgreSQL no disco da VM, região North Central US (Illinois, EUA) | Banco sem porta exposta; só a API acessa |
 | Descrição livre | Pode conter por engano | Mesmo banco | A automação de triagem remove telefone, e-mail e CPF antes do encaminhamento; a página orienta a não escrever dados pessoais |
 | IP de quem acessa | Sim (dado pessoal indireto) | Não é gravado: o log de acesso do Caddy fica desligado (padrão) e a API roda sem log de acesso (`--no-access-log`); só erros vão para o log do container, com rotação de 10 MB × 3 | Não é usado nem enviado a terceiros |
 | Logs da automação de triagem | Não | Volume do serviço `robo` na VM | Recusam descrição, foto e coordenada |
 | Métricas | Não | Prometheus (15 dias) | Só contagens e tempos |
 | Segredos | Não pessoais, mas sensíveis | `/etc/calcada-livre/.env` (root, 600), `terraform.tfstate` local, GitHub Secrets | Fora do Git, Gitleaks no pipeline |
 
-Nenhum dado sai do Brasil, exceto o mapa de fundo, que o navegador do cidadão baixa direto do OpenStreetMap.
+**Por que North Central US, e não Brazil South.** A assinatura Azure for Students usada no trabalho permite criar recursos em Brazil South, mas não oferece lá nenhum dos tamanhos de VM do projeto. O `preparar.sh` confere isso antes de criar a nuvem e escolheu a primeira região permitida com máquina disponível. Consequências para a LGPD:
+
+- O MVP não coleta dados pessoais, então não há cadastro de cidadão guardado fora do Brasil.
+- O único risco é alguém escrever um dado pessoal na descrição livre por engano. Nesse caso ele ficaria guardado nos EUA, o que seria uma transferência internacional (LGPD, arts. 33 a 36). Por isso a página orienta a não escrever dados pessoais e a automação de triagem remove telefone, e-mail e CPF.
+- Num ambiente real, com assinatura paga, basta `regiao = "brazilsouth"` no `terraform.tfvars` para tudo ficar no Brasil. Nenhuma outra linha muda.
+
+O mapa de fundo é baixado pelo navegador do cidadão direto do OpenStreetMap.
+
+**Dados de demonstração.** As ocorrências que aparecem no MVP publicado são simuladas: vêm do cenário de demonstração da automação de triagem (`python -m triagem.semear`, no repositório [calcada-livre-rpa](https://github.com/CarlosGanzerli/calcada-livre-rpa)), que cria um caso para cada decisão da triagem. Nenhuma delas se refere a uma pessoa ou a um relato real.
 
 ### Estimativa de custo
 
-Preços de tabela da Azure (pagamento por uso) para a região Brazil South, em dólar, consultados em 16/11/2026 na [API pública de preços](https://prices.azure.com/api/retail/prices?currencyCode=USD&$filter=armRegionName%20eq%20'brazilsouth'%20and%20armSkuName%20eq%20'Standard_B2s'%20and%20priceType%20eq%20'Consumption'), a mesma fonte da [calculadora de preços](https://azure.microsoft.com/pt-br/pricing/calculator/). Mês de 730 horas.
+Preços de tabela da Azure (pagamento por uso) para a região North Central US, em dólar, consultados em 18/11/2026 na [API pública de preços](https://prices.azure.com/api/retail/prices?currencyCode=USD&$filter=armRegionName%20eq%20'northcentralus'%20and%20armSkuName%20eq%20'Standard_B2as_v2'), a mesma fonte da [calculadora de preços](https://azure.microsoft.com/pt-br/pricing/calculator/). Mês de 730 horas.
 
 | Recurso | Configuração | Preço unitário | US$/mês |
 |---|---|---|---|
-| Máquina virtual | B2s Linux (2 vCPU, 4 GB), ligada 24 h | US$ 0,0672 por hora | 49,06 |
-| Disco do sistema | Standard SSD de 30 GB (faixa E4) | US$ 4,48 por mês | 4,48 |
+| Máquina virtual | B2as_v2 Linux (2 vCPU, 8 GB), ligada 24 h | US$ 0,0752 por hora | 54,90 |
+| Disco do sistema | Standard SSD de 30 GB (faixa E4) | US$ 2,40 por mês | 2,40 |
 | IP público | Standard, IPv4 estático | US$ 0,005 por hora | 3,65 |
 | Tráfego de saída | primeiros 100 GB/mês gratuitos | | 0 |
-| **Total** | | | **57,19** |
+| **Total** | | | **60,95** |
 
-- **No período de avaliação:** três semanas no ar custam cerca de US$ 40, cobertos pelos US$ 100 de crédito do Azure for Students.
-- **Para gastar menos:** a mesma VM na região East US custa US$ 30,37 por mês (38% menos), mas os dados sairiam do Brasil. A B1ms (1 vCPU, 2 GB) custa US$ 24,53 por mês em Brazil South, mas fica apertada para Postgres, Grafana e Prometheus juntos.
+- **No período de avaliação:** nove dias no ar (18 a 26/11) custam cerca de US$ 18, cobertos pelos US$ 100 de crédito do Azure for Students.
+- **Comparação com Brazil South:** a B2s (2 vCPU, 4 GB) custaria US$ 57,19 por mês com disco e IP, e os dados ficariam no Brasil. Não foi usada porque a assinatura de estudante não oferece esse tamanho nessa região.
+- **Para gastar menos:** na mesma região, a B2als_v2 (2 vCPU, 4 GB) custa US$ 0,0376 por hora, e o total cai para US$ 33,50 por mês. Ficamos com 8 GB para ter folga com Postgres, Grafana e Prometheus na mesma máquina durante a correção.
 - **Depois da correção:** `terraform destroy` apaga tudo e o custo zera.
