@@ -70,6 +70,8 @@ Deploy confirmado.
 Fumaça OK
 ```
 
+![Execução nº 9 do pipeline: todos os jobs verdes, inclusive Conferir deploy em produção](evidencias/06-pipeline-verde.png)
+
 A chave `ROBO_API_KEY` cadastrada no GitHub Secrets (o valor não aparece para ninguém, nem para quem cadastrou):
 
 ![GitHub Secrets do repositório com a chave ROBO_API_KEY](evidencias/02-github-secrets.png)
@@ -101,6 +103,8 @@ Commit:      8ad629cd45781744a90dd1d59607ed613989c917
 WRN leaks found: 1
 ##[error]Process completed with exit code 1.
 ```
+
+![Execução nº 2 do pipeline: Gitleaks em vermelho, publicação e deploy pulados](evidencias/07-pipeline-barrado.png)
 
 - Como a publicação depende de todas as verificações, a imagem do commit barrado nunca existiu no GHCR, e a VM continuou no commit anterior.
 - O Semgrep não acusou essa chave (ela não tem um formato conhecido); o Gitleaks acusou pela entropia. Por isso as barreiras se somam.
