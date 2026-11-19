@@ -1,5 +1,6 @@
 """API e página do MVP Calçada Livre."""
 import hmac
+import mimetypes
 import os
 from datetime import datetime
 from contextlib import asynccontextmanager
@@ -17,6 +18,7 @@ from .models import Ocorrencia
 from .schemas import OcorrenciaAtualizar, OcorrenciaCriar, OcorrenciaSaida, Status
 
 STATIC = Path(__file__).parent / "static"
+mimetypes.add_type("font/woff2", ".woff2")  # a imagem base não conhece o tipo da fonte da página
 
 
 
@@ -39,8 +41,11 @@ CABECALHOS_DE_SEGURANCA = {
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "strict-origin-when-cross-origin",
+    # A página só fala com o próprio site, com os mapas do OpenStreetMap e com a busca de
+    # endereços (Nominatim). "blob:" é a prévia da foto escolhida, que não sai do navegador.
     "Content-Security-Policy": (
-        "default-src 'self'; img-src 'self' data: https://*.tile.openstreetmap.org; "
+        "default-src 'self'; img-src 'self' data: blob: https://*.tile.openstreetmap.org; "
+        "connect-src 'self' https://nominatim.openstreetmap.org; "
         "style-src 'self' 'unsafe-inline'; frame-ancestors 'none'"
     ),
 }

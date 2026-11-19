@@ -3,79 +3,296 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Calçada Livre</title>
-  <meta name="description" content="Mapa colaborativo de barreiras de acessibilidade em calçadas.">
+  <title>Calçada Livre · Mapa colaborativo de barreiras nas calçadas</title>
+  <meta name="description" content="Envie a foto ou o vídeo de uma calçada com problema. A visão computacional identifica a barreira e a ocorrência entra no mapa para triagem.">
+  <meta name="theme-color" content="#0f3d2a">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f3d2a'/%3E%3Cpath d='M7 21h18M7 21l4-9h10l4 9' stroke='%23f5c400' stroke-width='2.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css">
   <link rel="stylesheet" href="/static/estilo.css">
 </head>
 <body>
   <a class="pular" href="#conteudo">Pular para o conteúdo</a>
-  <header>
-    <h1>Calçada Livre</h1>
-    <p>Barreiras em calçadas de São Paulo, relatadas por cidadãos, pelo carrinho inspetor e pela câmera.</p>
+
+  <header class="topo">
+    <div class="wrap topo-linha">
+      <a class="marca" href="#inicio" aria-label="Calçada Livre, início">
+        <svg class="marca-icone" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8"/><path d="M7 21h18M7 21l4-9h10l4 9"/></svg>
+        <span>Calçada Livre</span>
+      </a>
+      <nav class="menu" aria-label="Seções">
+        <a href="#como-funciona">Como funciona</a>
+        <a href="#reportar">Reportar</a>
+        <a href="#mapa-sec">Mapa</a>
+        <a href="#ocorrencias">Ocorrências</a>
+        <a href="/docs">API</a>
+      </nav>
+      <a class="botao primario compacto" href="#reportar">Reportar barreira</a>
+    </div>
   </header>
 
   <main id="conteudo">
-    <section aria-labelledby="t-resumo">
-      <h2 id="t-resumo">Resumo</h2>
-      <p id="resumo" aria-live="polite">Carregando…</p>
+    <section class="hero" id="inicio" aria-labelledby="t-hero">
+      <div class="wrap hero-grade">
+        <div class="hero-texto">
+          <p class="sobretitulo">Mapeamento colaborativo de acessibilidade</p>
+          <h1 id="t-hero">Calçadas sem barreiras começam com uma foto.</h1>
+          <p class="hero-lead">Fotografe ou filme um buraco, um obstáculo ou um piso quebrado. A visão computacional identifica a barreira,
+            a ocorrência entra no mapa e a triagem automática define a prioridade e o encaminhamento.</p>
+          <div class="hero-acoes">
+            <a class="botao destaque" href="#reportar">Reportar uma barreira</a>
+            <a class="botao fantasma" href="#mapa-sec">Ver o mapa</a>
+          </div>
+          <ul class="hero-fatos">
+            <li><strong>3 tipos detectados</strong> buraco, obstáculo e piso quebrado</li>
+            <li><strong>Foto ou vídeo</strong> analisados na hora</li>
+            <li><strong>LGPD</strong> nenhum dado pessoal guardado</li>
+          </ul>
+        </div>
+
+        <figure class="hero-cartao" aria-label="Exemplo real de detecção do modelo">
+          <div class="hero-imagem">
+            <img src="/static/img/exemplo-deteccao.jpg" width="960" height="720"
+                 alt="Calçada de pedra portuguesa em São Paulo com uma caçamba de lixo bloqueando a passagem, marcada pelo modelo como obstáculo com 91% de confiança.">
+            <span class="ao-vivo"><i aria-hidden="true"></i>Detecção do modelo</span>
+          </div>
+          <figcaption>
+            <div class="cartao-linha">
+              <span class="selo obstaculo">Obstáculo</span>
+              <span class="cartao-meta">91% de confiança</span>
+            </div>
+            <p class="cartao-titulo">Caçamba ocupando a faixa livre da calçada</p>
+            <p class="credito">Bela Vista, São Paulo. Quadro do conjunto de teste, não usado no treino.
+              Vídeo: Videojournalisms, Wikimedia Commons, CC BY 3.0.</p>
+          </figcaption>
+        </figure>
+      </div>
     </section>
 
-    <section aria-labelledby="t-mapa">
-      <h2 id="t-mapa">Mapa</h2>
-      <p class="dica">O mapa é visual. A mesma informação está na tabela abaixo, que funciona com leitor de tela e teclado.</p>
-      <div id="mapa" role="img" aria-label="Mapa das ocorrências. Os dados estão também na tabela de ocorrências."></div>
+    <section class="wrap numeros-sec" aria-label="Resumo das ocorrências">
+      <dl class="numeros">
+        <div class="numero"><dt>Ocorrências</dt><dd id="n-total">0</dd></div>
+        <div class="numero"><dt><i class="ponto buraco" aria-hidden="true"></i>Buracos</dt><dd id="n-buraco">0</dd></div>
+        <div class="numero"><dt><i class="ponto obstaculo" aria-hidden="true"></i>Obstáculos</dt><dd id="n-obstaculo">0</dd></div>
+        <div class="numero"><dt><i class="ponto piso_quebrado" aria-hidden="true"></i>Piso quebrado</dt><dd id="n-piso_quebrado">0</dd></div>
+        <div class="numero alerta"><dt>Aguardando triagem</dt><dd id="n-nova">0</dd></div>
+      </dl>
     </section>
 
-    <section aria-labelledby="t-relatar">
-      <h2 id="t-relatar">Relatar uma barreira</h2>
-      <form id="form">
-        <label for="tipo">Tipo de barreira</label>
-        <select id="tipo" name="tipo" required>
-          <option value="buraco">Buraco</option>
-          <option value="obstaculo">Obstáculo (poste, entulho, carro)</option>
-          <option value="degrau">Degrau</option>
-          <option value="sem_rampa">Falta de rampa</option>
-          <option value="calcada_estreita">Calçada estreita</option>
-          <option value="trecho_escuro">Trecho escuro</option>
-          <option value="outro">Outro</option>
-        </select>
-
-        <fieldset>
-          <legend>Local</legend>
-          <p class="dica">Clique no mapa ou use o botão para pegar sua localização.</p>
-          <label for="lat">Latitude</label>
-          <input id="lat" name="latitude" inputmode="decimal" required>
-          <label for="lon">Longitude</label>
-          <input id="lon" name="longitude" inputmode="decimal" required>
-          <button type="button" id="gps">Usar minha localização</button>
-        </fieldset>
-
-        <label for="descricao">Descrição (não escreva nome, telefone ou documento)</label>
-        <textarea id="descricao" name="descricao" maxlength="1000" rows="3"></textarea>
-
-        <button type="submit">Enviar relato</button>
-        <p id="msg" role="status" aria-live="polite"></p>
-      </form>
+    <section class="wrap secao" id="como-funciona" aria-labelledby="t-como">
+      <div class="secao-cabeca">
+        <p class="sobretitulo escuro">Como funciona</p>
+        <h2 id="t-como">Da foto à zeladoria em três etapas</h2>
+      </div>
+      <ol class="etapas">
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+          <h3>Fotografe ou filme a barreira</h3>
+          <p>Pelo celular ou computador. A foto é reduzida no aparelho, o que economiza internet, e a localização gravada nela é apagada.</p>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg>
+          <h3>O modelo identifica</h3>
+          <p>Um detector YOLO treinado pela equipe reconhece buraco, obstáculo ou piso quebrado e borra rostos e placas antes de guardar a imagem.</p>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"/><path d="m9.5 11 1.8 1.8L15 9"/></svg>
+          <h3>A triagem encaminha</h3>
+          <p>A cada 15 minutos a automação de triagem valida a ocorrência, define a prioridade e gera o protocolo. O encaminhamento à prefeitura é simulado.</p>
+        </li>
+      </ol>
     </section>
 
-    <section aria-labelledby="t-lista">
-      <h2 id="t-lista">Ocorrências</h2>
-      <div class="tabela">
-        <table>
-          <caption>Últimas ocorrências, das mais recentes para as mais antigas</caption>
-          <thead>
-            <tr><th scope="col">Tipo</th><th scope="col">Origem</th><th scope="col">Status</th><th scope="col">Prioridade</th><th scope="col">Protocolo</th><th scope="col">Subprefeitura</th></tr>
-          </thead>
-          <tbody id="linhas"></tbody>
-        </table>
+    <section class="wrap secao" aria-labelledby="t-reportar">
+      <div class="trabalho">
+        <div id="reportar" class="painel">
+          <div class="painel-cabeca">
+            <h2 id="t-reportar">Reportar uma barreira</h2>
+          </div>
+
+          <form id="form" novalidate>
+            <div class="passo">
+              <span class="passo-num" aria-hidden="true">1</span>
+              <div class="passo-corpo">
+                <span class="rotulo" id="rotulo-foto">Foto ou vídeo da calçada</span>
+                <label class="arquivo" id="area-foto">
+                  <input id="foto" name="foto" type="file" accept="image/jpeg,image/png,image/webp,video/*" class="arquivo-input"
+                         aria-labelledby="rotulo-foto" aria-describedby="dica-foto aviso-pessoas">
+                  <img id="previa" alt="" hidden>
+                  <svg class="arquivo-icone" id="icone-arquivo" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+                  <svg class="arquivo-icone" id="icone-video" viewBox="0 0 24 24" aria-hidden="true" hidden><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg>
+                  <span class="arquivo-texto" id="texto-foto">
+                    <strong>Escolher foto ou vídeo</strong>
+                    <span>Foto até 10 MB · vídeo MP4, WEBM ou MOV até 50 MB e 2 minutos</span>
+                  </span>
+                </label>
+                <p id="dica-foto" class="dica">Vídeos são analisados ao vivo e cada barreira encontrada vira uma ocorrência. A localização gravada no arquivo é apagada e o vídeo original não é guardado.</p>
+                <p id="aviso-pessoas" class="aviso-lgpd">Não envie imagens com pessoas. Rostos e placas são borrados automaticamente, mas o borrão pode falhar.</p>
+                <details class="sem-foto">
+                  <summary>Não tem foto? Relate escolhendo o tipo</summary>
+                  <label for="tipo-manual" class="sr">Tipo de barreira</label>
+                  <select id="tipo-manual" name="tipo">
+                    <option value="">Escolha o tipo da barreira</option>
+                    <option value="buraco">Buraco</option>
+                    <option value="obstaculo">Obstáculo (poste, entulho, carro)</option>
+                    <option value="degrau">Degrau</option>
+                    <option value="sem_rampa">Falta de rampa</option>
+                    <option value="calcada_estreita">Calçada estreita</option>
+                    <option value="trecho_escuro">Trecho escuro</option>
+                    <option value="outro">Outro</option>
+                  </select>
+                  <p class="dica">Sem foto, o relato entra como manual e passa pela mesma triagem.</p>
+                </details>
+              </div>
+            </div>
+
+            <div class="passo">
+              <span class="passo-num" aria-hidden="true">2</span>
+              <fieldset class="passo-corpo">
+                <legend class="rotulo">Onde fica</legend>
+                <div class="abas" role="radiogroup" aria-label="Como informar o local">
+                  <input type="radio" name="modo" id="modo-endereco" value="endereco" checked>
+                  <label for="modo-endereco">Endereço</label>
+                  <input type="radio" name="modo" id="modo-mapa" value="mapa">
+                  <label for="modo-mapa">No mapa</label>
+                  <input type="radio" name="modo" id="modo-gps" value="gps">
+                  <label for="modo-gps">Minha localização</label>
+                </div>
+                <div class="aba-painel" data-modo="endereco">
+                  <label for="endereco" class="sr">Endereço</label>
+                  <div class="linha">
+                    <input id="endereco" name="endereco" type="text" maxlength="200" autocomplete="street-address"
+                           placeholder="Rua, número, bairro e cidade">
+                    <button type="button" id="btn-buscar" class="botao secundario">Buscar</button>
+                  </div>
+                </div>
+                <div class="aba-painel" data-modo="mapa" hidden>
+                  <p class="dica sem-margem">Clique no mapa no ponto da barreira. Depois, arraste o marcador para ajustar.</p>
+                  <button type="button" id="btn-mapa" class="botao secundario">Ir para o mapa</button>
+                </div>
+                <div class="aba-painel" data-modo="gps" hidden>
+                  <button type="button" id="btn-local" class="botao secundario">Usar minha localização</button>
+                </div>
+                <p id="local-status" class="estado-local" aria-live="polite">Nenhum local escolhido.</p>
+                <input type="hidden" id="latitude" name="latitude">
+                <input type="hidden" id="longitude" name="longitude">
+              </fieldset>
+            </div>
+
+            <div class="passo ultimo">
+              <span class="passo-num" aria-hidden="true">3</span>
+              <div class="passo-corpo">
+                <label for="descricao" class="rotulo">Comentário <span class="opcional">(opcional)</span></label>
+                <textarea id="descricao" name="descricao" maxlength="500" rows="2" aria-describedby="dica-comentario"
+                          placeholder="Ex.: em frente ao número 120, perto do ponto de ônibus"></textarea>
+                <p id="dica-comentario" class="dica">Não escreva nome, telefone ou documento.</p>
+              </div>
+            </div>
+
+            <button type="submit" id="btn-enviar" class="botao primario largo">Enviar foto</button>
+          </form>
+
+          <div id="resultado" class="resultado" role="status" aria-live="polite" tabindex="-1" hidden></div>
+        </div>
+
+        <div id="mapa-sec" class="painel painel-mapa">
+          <div class="painel-cabeca">
+            <h2 id="t-mapa">Mapa de ocorrências</h2>
+            <div class="filtros" role="group" aria-label="Filtrar por tipo de barreira">
+              <button type="button" class="filtro ativo" data-tipo="" aria-pressed="true">Todas</button>
+              <button type="button" class="filtro" data-tipo="buraco" aria-pressed="false"><i class="ponto buraco" aria-hidden="true"></i>Buraco</button>
+              <button type="button" class="filtro" data-tipo="obstaculo" aria-pressed="false"><i class="ponto obstaculo" aria-hidden="true"></i>Obstáculo</button>
+              <button type="button" class="filtro" data-tipo="piso_quebrado" aria-pressed="false"><i class="ponto piso_quebrado" aria-hidden="true"></i>Piso quebrado</button>
+              <button type="button" class="filtro" data-tipo="outros" aria-pressed="false"><i class="ponto outros" aria-hidden="true"></i>Outros</button>
+            </div>
+          </div>
+          <div id="mapa" role="application" aria-label="Mapa das barreiras registradas. Clique para marcar o local da sua foto."></div>
+          <p class="dica">Os pontos se atualizam sozinhos. Ocorrências duplicadas ou em quarentena aparecem só na tabela.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap secao" id="ocorrencias" aria-labelledby="t-lista">
+      <div class="painel">
+        <div class="painel-cabeca">
+          <div>
+            <h2 id="t-lista">Ocorrências recentes</h2>
+            <p class="dica sem-margem">Protocolo, prioridade e situação são preenchidos pela triagem automática.</p>
+          </div>
+          <span class="contagem" id="contagem-lista" aria-live="polite"></span>
+        </div>
+        <div class="tabela-rolagem">
+          <table>
+            <caption class="sr">Ocorrências registradas, da mais recente para a mais antiga</caption>
+            <thead><tr><th scope="col">Protocolo</th><th scope="col">Tipo</th><th scope="col">Local</th><th scope="col">Confiança</th>
+              <th scope="col">Prioridade</th><th scope="col">Situação</th><th scope="col">Origem</th><th scope="col">Foto</th></tr></thead>
+            <tbody id="lista"><tr><td colspan="8" class="vazio">Carregando…</td></tr></tbody>
+          </table>
+        </div>
       </div>
     </section>
   </main>
 
-  <footer>
-    <p>Projeto acadêmico FIAP Global Solution 2026.2. O encaminhamento à prefeitura é simulado. Nenhum dado pessoal é armazenado.</p>
+  <footer class="rodape">
+    <div class="wrap rodape-grade">
+      <div>
+        <a class="marca claro" href="#inicio">
+          <svg class="marca-icone" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8"/><path d="M7 21h18M7 21l4-9h10l4 9"/></svg>
+          <span>Calçada Livre</span>
+        </a>
+        <p>Mapa colaborativo de barreiras de acessibilidade nas calçadas. Projeto acadêmico da FIAP Global Solution 2026.2. O encaminhamento à prefeitura é simulado.</p>
+      </div>
+      <div>
+        <h2>Projeto</h2>
+        <ul>
+          <li><a href="https://github.com/CarlosGanzerli/calcada-livre">Repositório do MVP</a></li>
+          <li><a href="https://github.com/paulopes1/calcada-livre">Modelo de visão computacional</a></li>
+          <li><a href="/docs">Documentação da API</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Privacidade</h2>
+        <p>Nenhum nome, e-mail, telefone ou IP é guardado. Rostos e placas são borrados, os metadados da foto são apagados e o vídeo enviado não é guardado.</p>
+      </div>
+    </div>
+    <div class="wrap rodape-base">
+      <span>Engenharia de Software 4ES · FIAP</span>
+      <span>Mapas © colaboradores do OpenStreetMap</span>
+    </div>
   </footer>
+
+  <div id="aviso" class="aviso" role="status" aria-live="polite" hidden></div>
+
+  <dialog id="dlg-video" class="dlg" aria-labelledby="dlg-titulo">
+    <div class="dlg-cabeca">
+      <div>
+        <p class="sobretitulo escuro">Análise de vídeo</p>
+        <h2 id="dlg-titulo">Detecção ao vivo</h2>
+        <p class="dica sem-margem" id="dlg-arquivo"></p>
+      </div>
+      <button type="button" class="dlg-fechar" id="dlg-fechar" aria-label="Fechar a análise">×</button>
+    </div>
+    <div class="dlg-corpo">
+      <div class="dlg-tela">
+        <img id="dlg-stream" alt="Vídeo enviado sendo analisado, com as barreiras marcadas">
+        <div class="dlg-carregando" id="dlg-carregando"><span class="giro grande" aria-hidden="true"></span>Preparando a análise…</div>
+      </div>
+      <aside class="dlg-lado" aria-live="polite">
+        <div class="progresso" aria-hidden="true"><i id="dlg-barra"></i></div>
+        <p class="dlg-estado" id="dlg-estado">Analisando…</p>
+        <dl class="dlg-contagem">
+          <div><dt><i class="ponto buraco" aria-hidden="true"></i>Buracos</dt><dd id="dlg-n-buraco">0</dd></div>
+          <div><dt><i class="ponto obstaculo" aria-hidden="true"></i>Obstáculos</dt><dd id="dlg-n-obstaculo">0</dd></div>
+          <div><dt><i class="ponto piso_quebrado" aria-hidden="true"></i>Piso quebrado</dt><dd id="dlg-n-piso_quebrado">0</dd></div>
+        </dl>
+        <h3 class="dlg-subtitulo">Ocorrências registradas</h3>
+        <ul class="dlg-lista" id="dlg-lista"><li class="vazio">Nenhuma ainda.</li></ul>
+      </aside>
+    </div>
+    <div class="dlg-rodape">
+      <p class="dica sem-margem">Fechar antes do fim interrompe a análise. O vídeo original não é guardado.</p>
+      <button type="button" class="botao primario" id="dlg-mapa">Ver no mapa</button>
+    </div>
+  </dialog>
 
   <script src="/static/vendor/leaflet/leaflet.js"></script>
   <script src="/static/app.js"></script>
