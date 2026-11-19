@@ -94,7 +94,7 @@ As imagens no GHCR já são públicas (conferido em 16/11/2026), então a VM con
      --query "value[0].message" -o tsv
    ```
 
-   **O que você deve ver:** os serviços `api`, `caddy`, `db`, `grafana`, `node-exporter`, `prometheus` e `robo` com status `Up`.
+   **O que você deve ver:** os serviços `api`, `caddy`, `db`, `grafana`, `node-exporter`, `prometheus`, `robo` e `visao` com status `Up`.
 
    > **PRINT 4 · `04-docker-compose-ps.png`**: a saída desse comando.
 

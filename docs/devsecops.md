@@ -6,11 +6,15 @@ Como o MVP chega ao cidadão: empacotado em container, numa nuvem descrita por c
 
 **No ar desde 18/11/2026:** <https://calcada-livre-vsqie.northcentralus.cloudapp.azure.com>
 
-Em 19/11/2026 o MVP ganhou a página nova e a detecção de barreiras por visão computacional: o cidadão envia uma foto ou um vídeo, o modelo treinado pela equipe identifica a barreira e a ocorrência entra na mesma API, com origem `visao`. As duas imagens abaixo são de 18/11, com a página anterior.
+Em 19/11/2026 o MVP ganhou a página nova e a detecção de barreiras por visão computacional: o cidadão envia uma foto ou um vídeo, o modelo treinado pela equipe identifica a barreira e a ocorrência entra na mesma API, com origem `visao`.
 
-![MVP no ar pela URL pública, com as ocorrências do cenário de demonstração no mapa](evidencias/03-mvp-no-ar.png)
+![MVP no ar pela URL pública, com HTTPS, em 19/11/2026](evidencias/03-mvp-no-ar.png)
 
-A mesma página, mais abaixo, com as ocorrências já triadas pela automação (protocolo, prioridade e subprefeitura). Os dados são simulados.
+Teste em produção, em 19/11/2026: uma foto enviada pela página. O modelo identificou um buraco, com 52% de confiança.
+
+![Resultado da detecção em uma foto enviada pela página](evidencias/03d-deteccao-foto.png)
+
+A mesma página, mais abaixo. Onze minutos depois, a automação de triagem encaminhou essa ocorrência, com protocolo, prioridade e subprefeitura. As demais ocorrências são simuladas.
 
 ![Tabela de ocorrências em produção depois da triagem automática](evidencias/03b-ocorrencias-triadas.png)
 
@@ -25,9 +29,9 @@ A mesma página, mais abaixo, com as ocorrências já triadas pela automação (
 | Endurecimento extra | API e detecção com `read_only`, `cap_drop: ALL`, `no-new-privileges`; detecção com limite de CPU e de memória, para um vídeo pesado não derrubar a API; banco e Prometheus sem porta publicada; healthchecks; rotação de logs | `docker-compose.yml` |
 | Envio de arquivos | Só imagem (JPG, PNG, WEBP até 10 MB) e vídeo (até 50 MB e 2 minutos), conferidos pelo conteúdo e não pelo nome; o limite de tamanho vale no Caddy e de novo no serviço; um vídeo por vez e limite de envios por minuto; as fotos ficam num volume do compose | `mvp/visao/`, `infra/caddy/Caddyfile` |
 
-**Produção, 18/11/2026:** os sete containers rodando na VM da Azure (`docker compose ps`, pelo Cloud Shell, sem SSH). Desde 19/11 são oito, com o `visao`.
+**Produção, 19/11/2026:** os oito containers rodando na VM da Azure (`docker compose ps`, pelo Cloud Shell, sem SSH).
 
-![Saída do docker compose ps na VM: sete serviços no ar](evidencias/04-docker-compose-ps.png)
+![Saída do docker compose ps na VM: oito serviços no ar](evidencias/04-docker-compose-ps.png)
 
 ## 2. Infraestrutura como código (3,0)
 
@@ -74,6 +78,19 @@ Fumaça OK
 ```
 
 ![Execução nº 9 do pipeline: todos os jobs verdes, inclusive Conferir deploy em produção](evidencias/06-pipeline-verde.png)
+
+**Versão com a detecção, 19/11/2026.** Na [execução nº 15](https://github.com/CarlosGanzerli/calcada-livre/actions/runs/44452833283), a imagem do commit `580982e` foi publicada às 00h40min21s e a VM passou a responder com esse commit 2 minutos e 10 segundos depois. O teste de fumaça esperou o serviço de detecção responder: o 404 em `/visao/saude` durou 26 segundos, até o Caddy carregar a rota nova.
+
+```text
+tentativa 12: produção em ''
+tentativa 13: produção em '580982e42176506372fe558fd41c99e902f2c31e'
+Deploy confirmado.
+tentativa 1: /visao/saude respondeu 404
+tentativa 5: /visao/saude respondeu 404
+Fumaça OK
+```
+
+![Execução nº 15 do pipeline: todos os jobs verdes, com a versão que inclui a detecção](evidencias/06b-pipeline-verde-15.png)
 
 A chave `ROBO_API_KEY` cadastrada no GitHub Secrets (o valor não aparece para ninguém, nem para quem cadastrou):
 
