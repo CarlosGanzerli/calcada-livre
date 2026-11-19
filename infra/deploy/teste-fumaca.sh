@@ -26,6 +26,9 @@ confere() {  # confere <código esperado> <descrição> <argumentos do curl...>
 confere 200 "página do MVP"                  "$MVP_URL/"
 confere 200 "resumo da API"                  "$MVP_URL/api/resumo"
 confere 404 "/metrics não aparece na internet" "$MVP_URL/metrics"
+confere 200 "serviço de detecção (visão computacional)" "$MVP_URL/visao/saude"
+confere 422 "arquivo que não é imagem é recusado" -F 'foto=@/etc/hostname;type=image/jpeg' \
+  -F latitude=-23.55 -F longitude=-46.63 "$MVP_URL/visao/detectar"
 confere 401 "alteração sem chave é recusada" -X PATCH -H 'Content-Type: application/json' -d '{}' "$MVP_URL/api/ocorrencias/teste"
 if [ -n "${ROBO_API_KEY:-}" ]; then
   # 404 = a chave foi aceita e o id "teste" não existe: nada é alterado

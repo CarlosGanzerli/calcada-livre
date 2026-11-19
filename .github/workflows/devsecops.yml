@@ -149,6 +149,17 @@ jobs:
         run: |
           [ -z "$MVP_URL" ] && exit 0
           set -e
+          # Serviço de detecção: o container novo fica pronto e o Caddy recarrega a configuração
+          # alguns segundos depois de a API trocar de versão. Espera até 3 min.
+          for i in $(seq 1 36); do
+            visao=$(curl -s -o /dev/null -w '%{http_code}' "$MVP_URL/visao/saude" || true)
+            [ "$visao" = 200 ] && break
+            echo "tentativa $i: /visao/saude respondeu $visao"
+            sleep 5
+          done
+          test "$visao" = 200
+          # um arquivo que não é imagem tem de ser recusado (nada é gravado)
+          test "$(curl -s -o /dev/null -w '%{http_code}' -F 'foto=@/etc/hostname;type=image/jpeg' -F latitude=-23.55 -F longitude=-46.63 $MVP_URL/visao/detectar)" = 422
           test "$(curl -s -o /dev/null -w '%{http_code}' $MVP_URL/)" = 200
           test "$(curl -s -o /dev/null -w '%{http_code}' $MVP_URL/api/resumo)" = 200
           test "$(curl -s -o /dev/null -w '%{http_code}' $MVP_URL/metrics)" = 404          # métricas não vazam

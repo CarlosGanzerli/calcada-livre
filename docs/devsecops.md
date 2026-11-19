@@ -6,6 +6,8 @@ Como o MVP chega ao cidadão: empacotado em container, numa nuvem descrita por c
 
 **No ar desde 18/11/2026:** <https://calcada-livre-vsqie.northcentralus.cloudapp.azure.com>
 
+Em 19/11/2026 o MVP ganhou a página nova e a detecção de barreiras por visão computacional: o cidadão envia uma foto ou um vídeo, o modelo treinado pela equipe identifica a barreira e a ocorrência entra na mesma API, com origem `visao`. As duas imagens abaixo são de 18/11, com a página anterior.
+
 ![MVP no ar pela URL pública, com as ocorrências do cenário de demonstração no mapa](evidencias/03-mvp-no-ar.png)
 
 A mesma página, mais abaixo, com as ocorrências já triadas pela automação (protocolo, prioridade e subprefeitura). Os dados são simulados.
@@ -16,13 +18,14 @@ A mesma página, mais abaixo, com as ocorrências já triadas pela automação (
 
 | Requisito | Como foi atendido | Onde |
 |---|---|---|
-| Dockerfile enxuto | Multi-stage: o estágio `build` instala as dependências num venv; a imagem final copia só o venv e o código, sem compiladores nem cache, e o pip da imagem base é removido. Tamanho: 70 MB compactada. Base `python:3.13-slim` com `apt-get upgrade` para receber as correções de segurança | `mvp/Dockerfile` |
+| Dockerfile enxuto | Multi-stage: o estágio `build` instala as dependências num venv; a imagem final copia só o venv e o código, sem compiladores nem cache, e o pip da imagem base é removido. A mesma imagem serve a API e o serviço de detecção (`visao`), cada um com seu comando. Tamanho: cerca de 200 MB compactada (eram 70 MB antes da detecção; a diferença são o OpenCV, o ONNX Runtime e o modelo). O modelo roda em ONNX para a imagem não precisar do PyTorch, que passaria de 1 GB. Base `python:3.13-slim` com `apt-get upgrade` para receber as correções de segurança | `mvp/Dockerfile` |
 | Usuário não root | `USER app` (uid 10001) | `mvp/Dockerfile` |
 | Sem segredo na imagem | Nenhum `ENV` com senha; tudo chega por variável de ambiente em tempo de execução. `.dockerignore` exclui `.env` e bancos locais. O Trivy também procura segredos | `mvp/.dockerignore` |
-| Stack com `docker compose` | `docker compose up -d` sobe banco, API, Caddy e, com perfis, a automação de triagem (serviço `robo`), Prometheus, Grafana e node-exporter | `docker-compose.yml` |
-| Endurecimento extra | API com `read_only`, `cap_drop: ALL`, `no-new-privileges`; banco e Prometheus sem porta publicada; healthchecks; rotação de logs | `docker-compose.yml` |
+| Stack com `docker compose` | `docker compose up -d` sobe banco, API, serviço de detecção (`visao`), Caddy e, com perfis, a automação de triagem (serviço `robo`), Prometheus, Grafana e node-exporter | `docker-compose.yml` |
+| Endurecimento extra | API e detecção com `read_only`, `cap_drop: ALL`, `no-new-privileges`; detecção com limite de CPU e de memória, para um vídeo pesado não derrubar a API; banco e Prometheus sem porta publicada; healthchecks; rotação de logs | `docker-compose.yml` |
+| Envio de arquivos | Só imagem (JPG, PNG, WEBP até 10 MB) e vídeo (até 50 MB e 2 minutos), conferidos pelo conteúdo e não pelo nome; o limite de tamanho vale no Caddy e de novo no serviço; um vídeo por vez e limite de envios por minuto; as fotos ficam num volume do compose | `mvp/visao/`, `infra/caddy/Caddyfile` |
 
-**Produção, 18/11/2026:** os sete containers rodando na VM da Azure (`docker compose ps`, pelo Cloud Shell, sem SSH).
+**Produção, 18/11/2026:** os sete containers rodando na VM da Azure (`docker compose ps`, pelo Cloud Shell, sem SSH). Desde 19/11 são oito, com o `visao`.
 
 ![Saída do docker compose ps na VM: sete serviços no ar](evidencias/04-docker-compose-ps.png)
 
@@ -59,7 +62,7 @@ Arquivo: `.github/workflows/devsecops.yml`. Roda a cada push e pull request. As 
 - **Trivy** reprova CVE CRITICAL ou HIGH que já tenha correção, e configuração insegura em Dockerfile, compose e Terraform.
 - **Terraform** confere a formatação, valida a configuração (`terraform validate`) e roda os testes da infraestrutura (`terraform test`): `admin_cidr = 0.0.0.0/0` tem de ser recusado, e SSH e Grafana só podem aceitar o IP da equipe.
 - **Segredos no GitHub Secrets:** `ROBO_API_KEY` (usada no teste de fumaça para provar que a autenticação funciona em produção sem alterar dados). A publicação no GHCR usa o `GITHUB_TOKEN` temporário do próprio Actions. A URL fica em *Variables* (`MVP_URL`), porque não é segredo.
-- **Deploy automático:** a VM roda `infra/deploy/atualizar.sh` a cada minuto (timer do systemd). Ele baixa a imagem mais recente publicada, lê nela o commit que o pipeline aprovou (`GIT_SHA`) e deixa as configurações (compose, Caddyfile, Prometheus) nesse mesmo commit. Um commit barrado não chega à VM, nem como imagem nem como configuração. Se a configuração do proxy ou do monitoramento mudou, Caddy, Prometheus e Grafana são reiniciados para carregá-la. O job final só fica verde quando `GET /health` em produção responde com o commit que acabou de passar no pipeline.
+- **Deploy automático:** a VM roda `infra/deploy/atualizar.sh` a cada minuto (timer do systemd). Ele baixa a imagem mais recente publicada, lê nela o commit que o pipeline aprovou (`GIT_SHA`) e deixa as configurações (compose, Caddyfile, Prometheus) nesse mesmo commit. Um commit barrado não chega à VM, nem como imagem nem como configuração. Se a configuração do proxy ou do monitoramento mudou, Caddy, Prometheus e Grafana são reiniciados para carregá-la. O job final só fica verde quando `GET /health` em produção responde com o commit que acabou de passar no pipeline e o teste de fumaça passa: página, API, autenticação, `/metrics` fechado e serviço de detecção respondendo e recusando um arquivo que não é imagem.
 
 **Deploy automático em produção, 18/11/2026.** Na [execução nº 9](https://github.com/CarlosGanzerli/calcada-livre/actions/runs/44337279436), a imagem do commit `1abe301` foi publicada às 12h36min16s (horário de Brasília) e a VM passou a responder com esse commit 1 minuto e 55 segundos depois, sem ninguém entrar na máquina. Trecho do log do job **Conferir deploy em produção**:
 
@@ -115,7 +118,7 @@ WRN leaks found: 1
 
 ## 4. Observabilidade (3,0)
 
-Prometheus coleta as métricas da API (`/metrics`, só na rede interna) e da VM (node-exporter). O Grafana já sobe com a fonte de dados e o painel **"Calçada Livre · 4 sinais de ouro"** provisionados por arquivo.
+Prometheus coleta as métricas da API e do serviço de detecção (`/metrics`, só na rede interna) e da VM (node-exporter). O Grafana já sobe com a fonte de dados e o painel **"Calçada Livre · 4 sinais de ouro"** provisionados por arquivo.
 
 | Sinal de ouro | Métrica | Painel |
 |---|---|---|
@@ -165,7 +168,10 @@ Como usamos IaaS (uma VM), a maior parte da responsabilidade é nossa. Num PaaS 
 |---|---|---|---|
 | Ocorrência (tipo, coordenada, data, origem) | Não | PostgreSQL no disco da VM, região North Central US (Illinois, EUA) | Banco sem porta exposta; só a API acessa |
 | Descrição livre | Pode conter por engano | Mesmo banco | A automação de triagem remove telefone, e-mail e CPF antes do encaminhamento; a página orienta a não escrever dados pessoais |
-| IP de quem acessa | Sim (dado pessoal indireto) | Não é gravado: o log de acesso do Caddy fica desligado (padrão) e a API roda sem log de acesso (`--no-access-log`); só erros vão para o log do container, com rotação de 10 MB × 3 | Não é usado nem enviado a terceiros |
+| Foto enviada | Pode conter (rosto, placa, GPS nos dados EXIF) | Só a foto já tratada, no volume `visao-arquivos` da VM | A página pede para não enviar imagens com pessoas. Os dados EXIF são descartados, rostos e placas são borrados antes de gravar, e o arquivo original não é guardado |
+| Vídeo enviado | Pode conter (rosto, placa) | Não fica guardado: é apagado quando a análise termina ou é interrompida | Rostos e placas são borrados em cada quadro antes de exibir; só o quadro da barreira confirmada vira foto da ocorrência |
+| Endereço digitado | Não (é o endereço da barreira) | Na descrição da ocorrência | A busca vai do navegador para o Nominatim (OpenStreetMap), só quando o cidadão clica em buscar, no máximo uma consulta por segundo |
+| IP de quem acessa | Sim (dado pessoal indireto) | Não é gravado: o log de acesso do Caddy fica desligado (padrão) e a API e a detecção rodam sem log de acesso (`--no-access-log`); só erros vão para o log do container, com rotação de 10 MB × 3 | Não é usado nem enviado a terceiros |
 | Logs da automação de triagem | Não | Volume do serviço `robo` na VM | Recusam descrição, foto e coordenada |
 | Métricas | Não | Prometheus (15 dias) | Só contagens e tempos |
 | Segredos | Não pessoais, mas sensíveis | `/etc/calcada-livre/.env` (root, 600), `terraform.tfstate` local, GitHub Secrets | Fora do Git, Gitleaks no pipeline |
@@ -173,10 +179,11 @@ Como usamos IaaS (uma VM), a maior parte da responsabilidade é nossa. Num PaaS 
 **Por que North Central US, e não Brazil South.** A assinatura Azure for Students usada no trabalho permite criar recursos em Brazil South, mas não oferece lá nenhum dos tamanhos de VM do projeto. O `preparar.sh` confere isso antes de criar a nuvem e escolheu a primeira região permitida com máquina disponível. Consequências para a LGPD:
 
 - O MVP não coleta dados pessoais, então não há cadastro de cidadão guardado fora do Brasil.
-- O único risco é alguém escrever um dado pessoal na descrição livre por engano. Nesse caso ele ficaria guardado nos EUA, o que seria uma transferência internacional (LGPD, arts. 33 a 36). Por isso a página orienta a não escrever dados pessoais e a automação de triagem remove telefone, e-mail e CPF.
+- Os riscos são alguém escrever um dado pessoal na descrição livre ou enviar uma foto em que apareça uma pessoa. Nesses casos o dado ficaria guardado nos EUA, o que seria uma transferência internacional (LGPD, arts. 33 a 36). Por isso a página orienta a não escrever dados pessoais e a não enviar imagens com pessoas, a automação de triagem remove telefone, e-mail e CPF, e rostos e placas são borrados antes de a foto ser gravada.
+- O borrão é automático e pode deixar passar um rosto pequeno ou de lado. Por isso o aviso na página vem antes do envio.
 - Num ambiente real, com assinatura paga, basta `regiao = "brazilsouth"` no `terraform.tfvars` para tudo ficar no Brasil. Nenhuma outra linha muda.
 
-O mapa de fundo é baixado pelo navegador do cidadão direto do OpenStreetMap.
+O mapa de fundo é baixado pelo navegador do cidadão direto do OpenStreetMap. A detecção roda inteira na VM: nenhuma foto ou vídeo é enviado a serviço de terceiros, e a telemetria do ONNX Runtime fica desligada (`ORT_DISABLE_TELEMETRY=1`).
 
 **Dados de demonstração.** As ocorrências que aparecem no MVP publicado são simuladas: vêm do cenário de demonstração da automação de triagem (`python -m triagem.semear`, no repositório [calcada-livre-rpa](https://github.com/CarlosGanzerli/calcada-livre-rpa)), que cria um caso para cada decisão da triagem. Nenhuma delas se refere a uma pessoa ou a um relato real.
 

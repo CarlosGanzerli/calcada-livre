@@ -2,7 +2,7 @@
 
 [![devsecops](https://github.com/CarlosGanzerli/calcada-livre/actions/workflows/devsecops.yml/badge.svg)](https://github.com/CarlosGanzerli/calcada-livre/actions/workflows/devsecops.yml)
 
-Mapa colaborativo de barreiras de acessibilidade em calçadas de São Paulo. Este repositório contém o **MVP** (API e página web) e a **produção DevSecOps**: container, infraestrutura como código, pipeline com barreiras de segurança e observabilidade.
+Mapa colaborativo de barreiras de acessibilidade em calçadas de São Paulo. Este repositório contém o **MVP** (API, página web e detecção de barreiras por visão computacional em foto e vídeo) e a **produção DevSecOps**: container, infraestrutura como código, pipeline com barreiras de segurança e observabilidade.
 
 FIAP Global Solution 2026.2 · Engenharia de Software 4º ano · disciplina *Secure DevOps Tools & Cloud Computing* (profs. Gabriel Henrique Boyczuk Arcanjo e Cleórbete Santos).
 
@@ -33,9 +33,9 @@ FIAP Global Solution 2026.2 · Engenharia de Software 4º ano · disciplina *Sec
 | Cidadão e território | Pessoas com deficiência, idosos e pais com carrinho de bebê, no município de São Paulo (SP) |
 | Problema em uma frase | Barreiras em calçadas (buracos, degraus, obstáculos, falta de rampa, trechos escuros) impedem a circulação e não chegam organizadas a quem pode corrigi-las |
 | Proposta de valor | Reunir relatos de cidadãos, de um carrinho inspetor (Maker Lab) e de uma câmera com IA num mapa único, triar automaticamente e encaminhar à subprefeitura certa com prioridade |
-| Componentes | Página web com mapa e API (este repositório) · automação de triagem em RPA ([calcada-livre-rpa](https://github.com/CarlosGanzerli/calcada-livre-rpa)) · carrinho inspetor (Maker Lab) · visão computacional · pipeline de dados · assistente com LLM local |
-| Fontes de dados | Relatos do app, leituras do carrinho, detecções da câmera, previsão Open-Meteo, pontos de interesse públicos |
-| Modelos de IA | YOLO (visão computacional, detecção de barreiras) · LLM local (assistente) |
+| Componentes | Página web com mapa, API e detecção de barreiras em foto e vídeo (este repositório) · automação de triagem em RPA ([calcada-livre-rpa](https://github.com/CarlosGanzerli/calcada-livre-rpa)) · carrinho inspetor (Maker Lab) · treino do modelo de visão computacional ([paulopes1/calcada-livre](https://github.com/paulopes1/calcada-livre)) · pipeline de dados · assistente com LLM local |
+| Fontes de dados | Relatos do app, fotos e vídeos enviados pelo cidadão, leituras do carrinho, detecções da câmera, previsão Open-Meteo, pontos de interesse públicos |
+| Modelos de IA | YOLO26n treinado pela equipe (visão computacional: buraco, obstáculo e piso quebrado), rodando no MVP com ONNX Runtime, em CPU · LLM local (assistente) |
 | URL e repositório | MVP: https://calcada-livre-vsqie.northcentralus.cloudapp.azure.com · Repositório: https://github.com/CarlosGanzerli/calcada-livre |
 | Indicadores de impacto | Tempo entre relato e encaminhamento · % de relatos triados sem intervenção humana · barreiras de prioridade alta perto de hospitais, escolas e pontos de ônibus |
 | ODS | 11 (cidades e comunidades sustentáveis) · 10 (redução das desigualdades) · 3 (saúde e bem-estar) |
@@ -46,8 +46,9 @@ FIAP Global Solution 2026.2 · Engenharia de Software 4º ano · disciplina *Sec
 
 ![Arquitetura de produção](docs/arquitetura.svg)
 
-- **Uma VM Ubuntu na Azure (região North Central US)**, criada inteira por Terraform, roda tudo com `docker compose`: Caddy (HTTPS automático), API FastAPI, PostgreSQL, automação de triagem, Prometheus, Grafana e node-exporter.
+- **Uma VM Ubuntu na Azure (região North Central US)**, criada inteira por Terraform, roda tudo com `docker compose`: Caddy (HTTPS automático), API FastAPI, serviço de detecção por visão computacional, PostgreSQL, automação de triagem, Prometheus, Grafana e node-exporter.
 - **Firewall (NSG):** só as portas 80 e 443 ficam abertas para a internet. SSH (22) e Grafana (3000) só aceitam o IP da equipe, e o Terraform **recusa** `0.0.0.0/0` para essas portas.
+- **Detecção em container próprio (`visao`):** o cidadão envia a foto ou o vídeo, o modelo identifica a barreira e a ocorrência entra na mesma API, com origem `visao`, foto e confiança. Se a detecção parar, o mapa, a API e a triagem continuam no ar.
 - **Deploy por pull:** a VM verifica a cada minuto se há uma imagem nova aprovada e se atualiza sozinha. O pipeline então confere em produção que a versão nova está no ar. Assim o SSH nunca precisa ficar aberto para os endereços (variáveis) dos runners do GitHub.
 
 ## Pipeline
@@ -62,7 +63,7 @@ Requisito: Docker com Compose.
 
 ```bash
 cp .env.example .env          # troque as senhas
-docker compose up -d --build  # API, banco, Caddy, Prometheus e Grafana
+docker compose up -d --build  # API, detecção, banco, Caddy, Prometheus e Grafana
 ```
 
 - MVP: http://localhost
@@ -88,6 +89,7 @@ O `preparar.sh` usa a ferramenta `az` (já instalada no Azure Cloud Shell). Sem 
 
 ```
 mvp/                     API FastAPI, página acessível com mapa, testes e Dockerfile
+mvp/visao/               detecção de barreiras em foto e vídeo (modelo em ONNX)
 docker-compose.yml       stack completa (perfis: monitoramento e robo, a automação de triagem)
 infra/terraform/         VM, rede, firewall, IP público e cloud-init
 infra/caddy/             proxy HTTPS e cabeçalhos de segurança
@@ -100,8 +102,16 @@ docs/                    arquitetura, DevSecOps, custos, LGPD, guia de deploy e 
 ## Segurança e LGPD (resumo)
 
 - Nenhum dado pessoal é coletado. A ocorrência tem tipo, coordenada e descrição; a automação de triagem remove telefone, e-mail e CPF escritos por engano.
+- Fotos e vídeos: a página pede para não enviar imagens com pessoas. Os dados EXIF (GPS, aparelho) são descartados, rostos e placas são borrados antes de qualquer gravação, só a foto com a barreira marcada é guardada e o vídeo é apagado ao fim da análise. O modelo roda na própria VM, sem enviar imagem a terceiros.
 - Os dados ficam no disco da VM, na região North Central US (EUA): a assinatura de estudante não oferece em Brazil South os tamanhos de VM do projeto. Num ambiente real, uma variável do Terraform leva tudo para Brazil South ([detalhes](docs/devsecops.md#onde-ficam-os-dados-pessoais-lgpd)).
 - Segredos: gerados aleatoriamente pelo Terraform, gravados só em `/etc/calcada-livre/.env` na VM (root, 600) e no `terraform.tfstate` local; a chave de acesso da automação também fica no GitHub Secrets. Nada disso vai para o Git (`.gitignore`), e o Gitleaks barra o push se algo escapar.
 - Container sem root, sistema de arquivos somente leitura, sem capabilities; `/metrics` bloqueado na internet.
 
 Mais em [docs/devsecops.md](docs/devsecops.md).
+
+## Créditos e licenças
+
+- **Modelo de visão computacional:** YOLO26n treinado pela equipe na disciplina de visão computacional, no repositório [paulopes1/calcada-livre](https://github.com/paulopes1/calcada-livre) (pasta `visao/`), onde estão os dados de treino, as métricas e os créditos dos datasets (licença MIT) e dos vídeos (CC BY 3.0). Aqui ele é usado convertido para ONNX (`mvp/visao/modelo/`). O treino usa o [Ultralytics YOLO](https://github.com/ultralytics/ultralytics) (AGPL-3.0), e o modelo é distribuído sob a mesma licença.
+- **Imagem de exemplo da página:** quadro do vídeo [Nova lixeira na calçada atrapalha pedestres](https://commons.wikimedia.org/wiki/File:Nova_lixeira_na_cal%C3%A7ada_atrapalha_pedestres.webm), de Videojournalisms (Wikimedia Commons, CC BY 3.0), com a detecção desenhada e rostos e placas borrados.
+- **Imagens de teste** (`mvp/tests/amostras/`): amostras dos datasets públicos de licença MIT usados no treino.
+- **Mapa e busca de endereço:** © colaboradores do [OpenStreetMap](https://www.openstreetmap.org/copyright) (ODbL), com [Leaflet](https://leafletjs.com/) (BSD-2). **Fonte:** [Inter](https://rsms.me/inter/) (SIL Open Font License).
