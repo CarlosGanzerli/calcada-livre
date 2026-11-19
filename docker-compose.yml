@@ -38,6 +38,31 @@ services:
     cap_drop: [ALL]
     ports: ["127.0.0.1:8000:8000"]   # só para teste local; a internet entra pelo Caddy
 
+  # Detecção por visão computacional: recebe a foto ou o vídeo, roda o modelo e registra a
+  # ocorrência na API (origem "visao"). Usa a mesma imagem da API, com outro comando, num
+  # container próprio: se a detecção parar, o mapa, a API e a triagem continuam no ar.
+  visao:
+    <<: *seguro
+    image: ghcr.io/${GHCR_OWNER:-carlosganzerli}/calcada-livre-api:${API_TAG:-latest}
+    command: ["uvicorn", "visao.main:app", "--host", "0.0.0.0", "--port", "8001", "--proxy-headers", "--forwarded-allow-ips", "*", "--no-access-log"]
+    environment:
+      MVP_API_URL: http://api:8000
+      SITE_ADDRESS: ${SITE_ADDRESS:-}      # para o link absoluto da foto na ocorrência
+      ARQUIVOS_DIR: /dados
+    volumes: [visao-arquivos:/dados]       # fotos anotadas ficam no volume, fora do container
+    depends_on: { api: { condition: service_started } }
+    read_only: true
+    tmpfs: ["/tmp:size=128m"]              # o envio passa por aqui antes de ir para o volume
+    cap_drop: [ALL]
+    cpus: 1.2                              # a VM tem 2 vCPUs: a análise de vídeo não ocupa tudo
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8001/visao/saude').status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
   caddy:
     <<: *seguro
     image: caddy:2-alpine
@@ -100,6 +125,7 @@ services:
 
 volumes:
   dados-postgres:
+  visao-arquivos:
   caddy-dados:
   robo-saida:
   robo-logs:

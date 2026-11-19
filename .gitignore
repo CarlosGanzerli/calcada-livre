@@ -13,3 +13,5 @@ __pycache__/
 .venv/
 .pytest_cache/
 *.db
+# Arquivos enviados em desenvolvimento local (fotos anotadas e vídeos em análise)
+arquivos/

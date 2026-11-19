@@ -3,22 +3,28 @@
 FROM python:3.13-slim AS build
 ENV PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1
 RUN python -m venv /venv
-COPY requirements.txt .
-RUN /venv/bin/pip install -r requirements.txt && /venv/bin/pip uninstall -y pip setuptools
+COPY requirements.txt requirements-visao.txt ./
+RUN /venv/bin/pip install -r requirements.txt -r requirements-visao.txt && /venv/bin/pip uninstall -y pip setuptools
 
 # Estágio 2: imagem final só com o venv e o código, sem compiladores nem cache
 FROM python:3.13-slim
 ARG GIT_SHA=dev
-ENV PATH="/venv/bin:$PATH" PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 GIT_SHA=$GIT_SHA
+# ORT_DISABLE_TELEMETRY: o ONNX Runtime (modelo de visão) não envia dados de uso para fora.
+ENV PATH="/venv/bin:$PATH" PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 GIT_SHA=$GIT_SHA \
+    ORT_DISABLE_TELEMETRY=1
 # Aplica as correções de segurança do sistema base (o Trivy barra CVE HIGH/CRITICAL com correção)
 # e remove o pip da imagem base: em produção nada é instalado dentro do container.
 RUN apt-get update && apt-get upgrade -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && python -m pip uninstall -y pip \
-    && useradd --create-home --uid 10001 app
+    && useradd --create-home --uid 10001 app \
+    && mkdir /dados && chown app:app /dados
 WORKDIR /app
 COPY --from=build /venv /venv
 COPY --chown=app:app app/ app/
+# Serviço de detecção (container "visao" do compose): mesmo código-base, outro comando.
+# As fotos anotadas vão para o volume montado em /dados.
+COPY --chown=app:app visao/ visao/
 USER app
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s --retries=3 \

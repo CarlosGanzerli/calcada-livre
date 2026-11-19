@@ -12,8 +12,19 @@
 		?X-Content-Type-Options "nosniff"
 		?X-Frame-Options "DENY"
 		?Referrer-Policy "strict-origin-when-cross-origin"
-		?Content-Security-Policy "default-src 'self'; img-src 'self' data: https://*.tile.openstreetmap.org; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'"
+		?Content-Security-Policy "default-src 'self'; img-src 'self' data: blob: https://*.tile.openstreetmap.org; connect-src 'self' https://nominatim.openstreetmap.org; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'"
 		-Server
+	}
+
+	# Detecção por visão computacional (foto e vídeo): container separado da API.
+	# O envio é limitado aqui e de novo no serviço; flush_interval -1 entrega cada
+	# quadro da análise ao vivo sem esperar o proxy acumular.
+	@visao path /visao/*
+	request_body @visao {
+		max_size 51MiB
+	}
+	reverse_proxy @visao visao:8001 {
+		flush_interval -1
 	}
 
 	reverse_proxy api:8000
